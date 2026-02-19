@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="酔鯨録">
+    <title>酔鯨録 Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            font-size: 18px;
+        }
+        
+        :root {
+            --primary: #1a4d2e;
+            --primary-light: #2d6a4f;
+            --accent: #d4a574;
+            --accent-light: #e8c9a0;
+            --bg-dark: #0f1419;
+            --bg-card: #1a2027;
+            --text-primary: #e8e6e3;
+            --text-secondary: #a8a29e;
+            --border: #2d3748;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+        
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1a2027 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px 0;
+            position: relative;
+        }
+        
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            letter-spacing: 0.05em;
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+        
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            animation: slideDown 0.3s ease;
+        }
+        
+        .alert-success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+        
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--error);
+            color: var(--error);
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .tab {
+            padding: 15px 25px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+        }
+        
+        .tab:hover {
+            color: var(--accent);
+        }
+        
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .card h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--accent);
+            margin-bottom: 12px;
+            font-size: 1.3rem;
+        }
+        
+        .input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .input-field {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .input-field label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .input-field input,
+        .input-field select {
+            padding: 12px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .input-field input:focus,
+        .input-field select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(29, 77, 46, 0.4);
+        }
+        
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        }
+        
+        .btn-excel {
+            background: linear-gradient(135deg, #217346 0%, #185c37 100%);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, var(--bg-card) 0%, #232a35 100%);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .stat-unit {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-left: 5px;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 30px;
+        }
+        
+        .records-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .record-item {
+            background: var(--bg-dark);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .record-item:hover {
+            transform: translateX(5px);
+            border-left-color: var(--primary-light);
+        }
+        
+        .record-date {
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+        
+        .record-details {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .delete-btn {
+            padding: 8px 15px;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        
+        .delete-btn:hover {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .input-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stat-value {
+                font-size: 1.5rem;
+            }
+        }
+        
+        .import-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            margin-top: 10px;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            display: none;
+        }
+        
+        #message-area {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 400px;
+        }
+        
+        .summary-box {
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1f28 100%);
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(212, 165, 116, 0.05);
+            border-radius: 8px;
+        }
+        
+        .summary-item.highlight {
+            background: linear-gradient(135deg, rgba(212, 165, 116, 0.2) 0%, rgba(212, 165, 116, 0.1) 100%);
+            border: 1px solid var(--accent);
+            padding: 15px;
+        }
+        
+        .summary-label {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .summary-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .summary-value-large {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--accent);
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .summary-item.highlight .summary-label {
+            font-size: 1.2rem;
+            color: var(--accent);
+        }
+        
+        .summary-box-compact {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .summary-item-small {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            background: rgba(212, 165, 116, 0.05);
+            border-radius: 6px;
+        }
+        
+        .summary-label-small {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        
+        .summary-value-small {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <div id="message-area"></div>
+    
+    <div class="container">
+        <header>
+            <h1>酔鯨録</h1>
+            <p class="subtitle">Alcohol Tracking Journal</p>
+        </header>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('input')">記録</button>
+            <button class="tab" onclick="switchTab('stats')">統計</button>
+            <button class="tab" onclick="switchTab('history')">履歴</button>
+        </div>
+        
+        <div id="input-tab" class="tab-content active">
+            <div class="card">
+                <h2>今日の記録</h2>
+                
+                <div class="input-field" style="margin-bottom: 20px;">
+                    <label>日付</label>
+                    <input type="date" id="entry-date" />
+                </div>
+                
+                <div class="input-group">
+                    <div class="input-field">
+                        <label>🍺 Beer_ml</label>
+                        <input type="number" id="beer" placeholder="0" min="0" step="10" />
+                    </div>
+                    <div class="input-field">
+                        <label>🍷 Wine_ml</label>
+                        <input type="number" id="wine" placeholder="0" min="0" step="10" />
+                    </div>
+                    <div class="input-field">
+                        <label>🍶 Sake_ml</label>
+                        <input type="number" id="sake" placeholder="0" min="0" step="10" />
+                    </div>
+                    <div class="input-field">
+                        <label>🥃 Whisky_ml</label>
+                        <input type="number" id="whisky" placeholder="0" min="0" step="10" />
+                    </div>
+                    <div class="input-field">
+                        <label>🍹 Shochu_ml</label>
+                        <input type="number" id="shochu" placeholder="0" min="0" step="10" />
+                    </div>
+                    <div class="input-field">
+                        <label>Other_ml</label>
+                        <input type="number" id="other" placeholder="0" min="0" step="10" />
+                    </div>
+                </div>
+                
+                <div class="input-field" style="margin-bottom: 20px;">
+                    <label>🏃 Workout</label>
+                    <select id="workout">
+                        <option value="">なし</option>
+                        <option value="run">run</option>
+                        <option value="muscle training">muscle training</option>
+                        <option value="ride">ride</option>
+                        <option value="swim">swim</option>
+                        <option value="maranic">maranic</option>
+                        <option value="muscle training+run">muscle training+run</option>
+                        <option value="muscle training+walk">muscle training+walk</option>
+                        <option value="muscle training+ride">muscle training+ride</option>
+                    </select>
+                </div>
+                
+                <div class="input-field">
+                    <label>🔥 Workout_kcal</label>
+                    <input type="number" id="workout-kcal" placeholder="0" min="0" step="10" />
+                </div>
+                
+                <div class="summary-box">
+                    <div class="summary-item highlight">
+                        <div class="summary-label">🍺 純アルコール量合計</div>
+                        <div class="summary-value-large" id="total-alcohol-display">0 g</div>
+                    </div>
+                </div>
+                
+                <div class="summary-box-compact">
+                    <div class="summary-item-small">
+                        <div class="summary-label-small">アルコールカロリー</div>
+                        <div class="summary-value-small" id="drink-kcal-display">0 kcal</div>
+                    </div>
+                    <div class="summary-item-small">
+                        <div class="summary-label-small">運動カロリー</div>
+                        <div class="summary-value-small" id="workout-kcal-display">0 kcal</div>
+                    </div>
+                </div>
+                
+                <div class="summary-box">
+                    <div class="summary-item highlight">
+                        <div class="summary-label">⚖️ カロリー収支 (B - A)</div>
+                        <div class="summary-value-large" id="balance-display">0 kcal</div>
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="saveEntry()">💾 記録を保存</button>
+                
+                <div class="import-section">
+                    <h3 style="color: var(--text-secondary); font-size: 1rem; margin-bottom: 15px;">📊 データ管理</h3>
+                    
+                    <button class="btn btn-excel" onclick="exportToExcel()">
+                        📥 Excel形式でエクスポート
+                    </button>
+                    
+                    <button class="btn btn-secondary" onclick="exportData()">
+                        📥 JSON形式でエクスポート
+                    </button>
+                    
+                    <div class="file-input-wrapper">
+                        <input type="file" id="import-file" accept=".json" onchange="importData(event)" />
+                        <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">
+                            📤 JSONデータをインポート
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="stats-tab" class="tab-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">今月の平均アルコール量</div>
+                    <div class="stat-value" id="avg-alcohol">0<span class="stat-unit">g</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">今月の平均運動消費量</div>
+                    <div class="stat-value" id="avg-workout">0<span class="stat-unit">kcal</span></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>アルコール量の推移（今月）</h2>
+                <div class="chart-container">
+                    <canvas id="alcohol-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>カロリー収支（今月の累積）</h2>
+                <div class="chart-container">
+                    <canvas id="calorie-chart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div id="history-tab" class="tab-content">
+            <div class="card">
+                <h2>記録履歴</h2>
+                <div class="records-list" id="records-list"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // マスターデータ
+        const masterData = {
+            beer: { alcohol: 5, kcal: 42, price: 55 },
+            wine: { alcohol: 14, kcal: 70, price: 160 },
+            sake: { alcohol: 15, kcal: 105, price: 167 },
+            whisky: { alcohol: 40, kcal: 237, price: 571 },
+            shochu: { alcohol: 25, kcal: 140, price: 139 },
+            other: { alcohol: 0, kcal: 0, price: 0 }
+        };
+        
+        let records = [];
+        let alcoholChart = null;
+        let calorieChart = null;
+        
+        function showMessage(message, type = 'success') {
+            const messageArea = document.getElementById('message-area');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            messageArea.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 4000);
+        }
+        
+        function init() {
+            console.log('アプリを初期化中...');
+            loadRecords();
+            setTodayDate();
+            updateStats();
+            updateCharts();
+            updateRecordsList();
+            
+            // 入力フィールドのイベントリスナーを設定
+            const inputs = ['beer', 'wine', 'sake', 'whisky', 'shochu', 'other', 'workout-kcal'];
+            inputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', updateSummary);
+            });
+            
+            // 日付変更時のイベントリスナー
+            document.getElementById('entry-date').addEventListener('change', onDateChange);
+            
+            updateSummary();
+            console.log('初期化完了:', records.length, '件の記録');
+        }
+        
+        function onDateChange() {
+            const date = document.getElementById('entry-date').value;
+            console.log('日付変更:', date);
+            
+            // その日の既存記録を探す
+            const existing = records.find(r => r.date === date);
+            
+            if (existing) {
+                // 既存記録がある場合は読み込む
+                document.getElementById('beer').value = existing.beer_ml || '';
+                document.getElementById('wine').value = existing.wine_ml || '';
+                document.getElementById('sake').value = existing.sake_ml || '';
+                document.getElementById('whisky').value = existing.whisky_ml || '';
+                document.getElementById('shochu').value = existing.shochu_ml || '';
+                document.getElementById('other').value = existing.other_ml || '';
+                document.getElementById('workout').value = existing.workout || '';
+                document.getElementById('workout-kcal').value = existing.workout_kcal || '';
+            } else {
+                // 既存記録がない場合はクリア
+                clearInputs();
+            }
+            
+            updateSummary();
+        }
+        
+        function clearInputs() {
+            document.getElementById('beer').value = '';
+            document.getElementById('wine').value = '';
+            document.getElementById('sake').value = '';
+            document.getElementById('whisky').value = '';
+            document.getElementById('shochu').value = '';
+            document.getElementById('other').value = '';
+            document.getElementById('workout').value = '';
+            document.getElementById('workout-kcal').value = '';
+        }
+        
+        function updateSummary() {
+            const entry = {
+                beer_ml: parseInt(document.getElementById('beer').value) || 0,
+                wine_ml: parseInt(document.getElementById('wine').value) || 0,
+                sake_ml: parseInt(document.getElementById('sake').value) || 0,
+                whisky_ml: parseInt(document.getElementById('whisky').value) || 0,
+                shochu_ml: parseInt(document.getElementById('shochu').value) || 0,
+                other_ml: parseInt(document.getElementById('other').value) || 0
+            };
+            
+            const workoutKcal = parseInt(document.getElementById('workout-kcal').value) || 0;
+            const calculated = calculateEntry(entry);
+            const drinkKcal = calculated.kcal;
+            const totalAlcohol = calculated.alc_g;
+            const balance = drinkKcal - workoutKcal;
+            
+            document.getElementById('total-alcohol-display').textContent = `${totalAlcohol} g`;
+            document.getElementById('drink-kcal-display').textContent = `${Math.round(drinkKcal)} kcal`;
+            document.getElementById('workout-kcal-display').textContent = `${workoutKcal} kcal`;
+            
+            const balanceEl = document.getElementById('balance-display');
+            balanceEl.textContent = `${balance >= 0 ? '+' : ''}${Math.round(balance)} kcal`;
+            
+            // 色を変更
+            if (balance > 0) {
+                balanceEl.style.color = '#ef4444'; // 赤（プラス）
+            } else if (balance < 0) {
+                balanceEl.style.color = '#22c55e'; // 緑（マイナス）
+            } else {
+                balanceEl.style.color = 'var(--accent)'; // 通常
+            }
+        }
+        
+        function setTodayDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('entry-date').value = today;
+        }
+        
+        function loadRecords() {
+            try {
+                const saved = localStorage.getItem('alcohol-records-pro');
+                if (saved) {
+                    records = JSON.parse(saved);
+                    console.log('ローカルストレージから読み込み:', records.length, '件');
+                } else {
+                    records = [];
+                    console.log('新規データベース');
+                }
+            } catch (e) {
+                console.error('データ読み込みエラー:', e);
+                showMessage('データの読み込みに失敗しました', 'error');
+                records = [];
+            }
+        }
+        
+        function saveRecords() {
+            try {
+                const jsonStr = JSON.stringify(records);
+                localStorage.setItem('alcohol-records-pro', jsonStr);
+                console.log('保存成功:', records.length, '件');
+                return true;
+            } catch (e) {
+                console.error('保存エラー:', e);
+                if (e.name === 'QuotaExceededError') {
+                    showMessage('ストレージ容量が不足しています', 'error');
+                } else {
+                    showMessage('データの保存に失敗しました', 'error');
+                }
+                return false;
+            }
+        }
+        
+        function calculateEntry(entry) {
+            let totalAlcohol = 0;
+            let totalKcal = 0;
+            let totalCost = 0;
+            
+            const drinks = ['beer', 'wine', 'sake', 'whisky', 'shochu', 'other'];
+            
+            drinks.forEach(drink => {
+                const ml = entry[drink + '_ml'] || 0;
+                if (ml > 0 && masterData[drink]) {
+                    totalAlcohol += (ml / 100) * masterData[drink].alcohol * 0.8;
+                    totalKcal += (ml / 100) * masterData[drink].kcal;
+                    totalCost += (ml / 100) * masterData[drink].price;
+                }
+            });
+            
+            return {
+                alc_g: Math.round(totalAlcohol * 10) / 10,
+                kcal: Math.round(totalKcal * 10) / 10,
+                cost: Math.round(totalCost)
+            };
+        }
+        
+        function saveEntry() {
+            console.log('保存処理開始...');
+            
+            const date = document.getElementById('entry-date').value;
+            if (!date) {
+                showMessage('日付を入力してください', 'error');
+                return;
+            }
+            
+            // 入力された値のみ取得（空欄は0として保存）
+            const beerVal = document.getElementById('beer').value;
+            const wineVal = document.getElementById('wine').value;
+            const sakeVal = document.getElementById('sake').value;
+            const whiskyVal = document.getElementById('whisky').value;
+            const shochuVal = document.getElementById('shochu').value;
+            const otherVal = document.getElementById('other').value;
+            const workoutKcalVal = document.getElementById('workout-kcal').value;
+            
+            const entry = {
+                date: date,
+                beer_ml: parseInt(beerVal) || 0,
+                wine_ml: parseInt(wineVal) || 0,
+                sake_ml: parseInt(sakeVal) || 0,
+                whisky_ml: parseInt(whiskyVal) || 0,
+                shochu_ml: parseInt(shochuVal) || 0,
+                other_ml: parseInt(otherVal) || 0,
+                workout: document.getElementById('workout').value || '',
+                workout_kcal: parseInt(workoutKcalVal) || 0
+            };
+            
+            const calculated = calculateEntry(entry);
+            Object.assign(entry, calculated);
+            
+            // 既存の記録を探して上書き
+            const existingIndex = records.findIndex(r => r.date === date);
+            if (existingIndex >= 0) {
+                records[existingIndex] = entry;
+                console.log('既存記録を上書き');
+            } else {
+                records.push(entry);
+                console.log('新規記録を追加');
+            }
+            
+            records.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if (saveRecords()) {
+                // 入力された項目のみ値を保持（空欄は空のまま）
+                if (!beerVal) document.getElementById('beer').value = '';
+                if (!wineVal) document.getElementById('wine').value = '';
+                if (!sakeVal) document.getElementById('sake').value = '';
+                if (!whiskyVal) document.getElementById('whisky').value = '';
+                if (!shochuVal) document.getElementById('shochu').value = '';
+                if (!otherVal) document.getElementById('other').value = '';
+                if (!workoutKcalVal) document.getElementById('workout-kcal').value = '';
+                
+                updateStats();
+                updateCharts();
+                updateRecordsList();
+                
+                if (existingIndex >= 0) {
+                    showMessage('✅ 記録を上書きしました', 'success');
+                } else {
+                    showMessage('✅ 記録を保存しました！', 'success');
+                }
+            }
+        }
+        
+        function deleteRecord(date) {
+            if (confirm('この記録を削除しますか？')) {
+                records = records.filter(r => r.date !== date);
+                saveRecords();
+                updateStats();
+                updateCharts();
+                updateRecordsList();
+                showMessage('記録を削除しました', 'success');
+            }
+        }
+        
+        function exportToExcel() {
+            if (records.length === 0) {
+                showMessage('エクスポートする記録がありません', 'error');
+                return;
+            }
+            
+            showMessage('Excel形式でエクスポート中...', 'success');
+            
+            // 月ごとにグループ化
+            const monthGroups = {};
+            records.forEach(record => {
+                const date = new Date(record.date);
+                const year = date.getFullYear();
+                const month = date.getMonth() + 1;
+                const sheetName = year.toString().slice(2) + ('0' + month).slice(-2);
+                
+                if (!monthGroups[sheetName]) {
+                    monthGroups[sheetName] = [];
+                }
+                monthGroups[sheetName].push(record);
+            });
+            
+            const wb = XLSX.utils.book_new();
+            
+            // 各月のシートを作成
+            Object.keys(monthGroups).sort().reverse().forEach(sheetName => {
+                const monthRecords = monthGroups[sheetName];
+                
+                // ヘッダー
+                const headers = [
+                    'Date', 'dow', 'Beer_ml', 'Beer_Alc_g', 'Wine_ml', 'Wine_Alc_g',
+                    'Sake_ml', 'Sake_Alc_g', 'Whisky_ml', 'Whisky_Alc_g', 'Shochu_ml',
+                    'Shochu_Alc_g', 'Chuhi_ml', 'Chuhi_Alc_g', 'Other_ml', 'Other_Alc_g',
+                    'Alc_g_SUM', 'Drink_kcal', 'Cost_yen', 'Workout_act', 'Workout_kcal', 'B_minus_A'
+                ];
+                
+                // データ行を作成
+                const rows = monthRecords.map(r => {
+                    const date = new Date(r.date);
+                    const dow = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
+                    
+                    return [
+                        r.date,
+                        dow,
+                        r.beer_ml || 0,
+                        ((r.beer_ml || 0) / 100 * 5 * 0.8).toFixed(1),
+                        r.wine_ml || 0,
+                        ((r.wine_ml || 0) / 100 * 14 * 0.8).toFixed(1),
+                        r.sake_ml || 0,
+                        ((r.sake_ml || 0) / 100 * 15 * 0.8).toFixed(1),
+                        r.whisky_ml || 0,
+                        ((r.whisky_ml || 0) / 100 * 40 * 0.8).toFixed(1),
+                        r.shochu_ml || 0,
+                        ((r.shochu_ml || 0) / 100 * 25 * 0.8).toFixed(1),
+                        0, // Chuhi_ml
+                        0, // Chuhi_Alc_g
+                        r.other_ml || 0,
+                        0, // Other_Alc_g
+                        r.alc_g || 0,
+                        r.kcal || 0,
+                        r.cost || 0,
+                        r.workout || '',
+                        r.workout_kcal || 0,
+                        ((r.kcal || 0) - (r.workout_kcal || 0)).toFixed(1)
+                    ];
+                });
+                
+                // シートを作成
+                const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+                
+                // 列幅を設定
+                ws['!cols'] = [
+                    {wch: 12}, {wch: 5}, {wch: 8}, {wch: 10}, {wch: 8}, {wch: 10},
+                    {wch: 8}, {wch: 10}, {wch: 10}, {wch: 12}, {wch: 10}, {wch: 12},
+                    {wch: 9}, {wch: 11}, {wch: 9}, {wch: 11}, {wch: 10}, {wch: 11},
+                    {wch: 9}, {wch: 20}, {wch: 12}, {wch: 10}
+                ];
+                
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            });
+            
+            // ファイルを保存
+            const filename = `酔鯨録_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, filename);
+            
+            showMessage('✅ Excel形式でエクスポートしました！', 'success');
+        }
+        
+        function updateStats() {
+            // 今月のデータを取得
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth() + 1;
+            const today = now.getDate();
+            
+            const thisMonthRecords = records.filter(r => {
+                const d = new Date(r.date);
+                return d.getFullYear() === currentYear && d.getMonth() + 1 === currentMonth;
+            });
+            
+            // 全日数での平均（休肝日・運動なしの日も含む）
+            const totalAlcohol = thisMonthRecords.reduce((sum, r) => sum + (r.alc_g || 0), 0);
+            const totalWorkout = thisMonthRecords.reduce((sum, r) => sum + (r.workout_kcal || 0), 0);
+            
+            // 今月の1日から今日までの日数で割る
+            const avgAlcohol = today > 0 ? Math.round(totalAlcohol / today * 10) / 10 : 0;
+            const avgWorkout = today > 0 ? Math.round(totalWorkout / today) : 0;
+            
+            document.getElementById('avg-alcohol').innerHTML = `${avgAlcohol}<span class="stat-unit">g</span>`;
+            document.getElementById('avg-workout').innerHTML = `${avgWorkout}<span class="stat-unit">kcal</span>`;
+        }
+        
+        function updateCharts() {
+            // 今月のデータを取得
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth() + 1;
+            
+            // 今月の1日から今日までの全日付を生成
+            const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+            const today = now.getDate();
+            const allDates = [];
+            const alcoholData = [];
+            const alcoholColors = [];
+            
+            for (let day = 1; day <= today; day++) {
+                const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                allDates.push(`${currentMonth}/${day}`);
+                
+                const record = records.find(r => r.date === dateStr);
+                const alcValue = record ? (record.alc_g || 0) : 0;
+                alcoholData.push(alcValue);
+                
+                // 本日より前で0の日は黄色、それ以外は通常色
+                if (day < today && alcValue === 0) {
+                    alcoholColors.push('#fbbf24');
+                } else {
+                    alcoholColors.push('#d4a574');
+                }
+            }
+            
+            // アルコールチャート
+            const ctxAlc = document.getElementById('alcohol-chart').getContext('2d');
+            if (alcoholChart) alcoholChart.destroy();
+            
+            // カスタムプラグインで休肝日マークを追加
+            const restDayPlugin = {
+                id: 'restDayMarker',
+                afterDatasetsDraw(chart) {
+                    const ctx = chart.ctx;
+                    const meta = chart.getDatasetMeta(0);
+                    
+                    meta.data.forEach((bar, index) => {
+                        const day = index + 1;
+                        if (day < today && alcoholData[index] === 0) {
+                            // ⭐マークを描画
+                            ctx.save();
+                            ctx.font = 'bold 20px Arial';
+                            ctx.fillStyle = '#fbbf24';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            ctx.fillText('⭐', bar.x, bar.y - 5);
+                            ctx.restore();
+                        }
+                    });
+                }
+            };
+            
+            alcoholChart = new Chart(ctxAlc, {
+                type: 'bar',
+                data: {
+                    labels: allDates,
+                    datasets: [{
+                        label: 'アルコール量 (g)',
+                        data: alcoholData,
+                        backgroundColor: alcoholColors,
+                        borderColor: alcoholColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { labels: { color: '#a8a29e' } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    const day = context.dataIndex + 1;
+                                    if (day < today && value === 0) {
+                                        return '休肝日 ⭐';
+                                    }
+                                    if (value === 0) {
+                                        return 'アルコール量: 0g';
+                                    }
+                                    return `アルコール量: ${value}g`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { color: '#a8a29e' }, 
+                            grid: { color: 'rgba(45, 55, 72, 0.5)' } 
+                        },
+                        x: { 
+                            ticks: { color: '#a8a29e' }, 
+                            grid: { color: 'rgba(45, 55, 72, 0.5)' } 
+                        }
+                    }
+                },
+                plugins: [restDayPlugin]
+            });
+            
+            // 今月のデータを日付順にソート
+            const thisMonthRecords = [];
+            for (let day = 1; day <= today; day++) {
+                const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const record = records.find(r => r.date === dateStr);
+                thisMonthRecords.push({
+                    date: dateStr,
+                    kcal: record ? (record.kcal || 0) : 0,
+                    workout_kcal: record ? (record.workout_kcal || 0) : 0
+                });
+            }
+            
+            // 累積計算
+            let cumulativeDrink = 0;
+            let cumulativeWorkout = 0;
+            const monthLabels = [];
+            const cumulativeDrinkData = [];
+            const cumulativeWorkoutData = [];
+            
+            thisMonthRecords.forEach((r, index) => {
+                const day = index + 1;
+                monthLabels.push(`${currentMonth}/${day}`);
+                
+                cumulativeDrink += r.kcal || 0;
+                cumulativeWorkout += r.workout_kcal || 0;
+                
+                cumulativeDrinkData.push(Math.round(cumulativeDrink));
+                cumulativeWorkoutData.push(Math.round(cumulativeWorkout));
+            });
+            
+            // カロリーチャート（累積）
+            const ctxCal = document.getElementById('calorie-chart').getContext('2d');
+            if (calorieChart) calorieChart.destroy();
+            calorieChart = new Chart(ctxCal, {
+                type: 'line',
+                data: {
+                    labels: monthLabels,
+                    datasets: [
+                        {
+                            label: '飲酒カロリー累積',
+                            data: cumulativeDrinkData,
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#ef4444',
+                            pointBorderColor: '#ef4444',
+                            borderWidth: 2
+                        },
+                        {
+                            label: '運動消費累積',
+                            data: cumulativeWorkoutData,
+                            borderColor: '#22c55e',
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#22c55e',
+                            pointBorderColor: '#22c55e',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { 
+                            labels: { color: '#a8a29e' }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                footer: function(tooltipItems) {
+                                    const index = tooltipItems[0].dataIndex;
+                                    const drink = cumulativeDrinkData[index];
+                                    const workout = cumulativeWorkoutData[index];
+                                    const balance = drink - workout;
+                                    return `収支: ${balance >= 0 ? '+' : ''}${balance} kcal`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { color: '#a8a29e' }, 
+                            grid: { color: 'rgba(45, 55, 72, 0.5)' },
+                            title: {
+                                display: true,
+                                text: 'カロリー (kcal)',
+                                color: '#a8a29e'
+                            }
+                        },
+                        x: { 
+                            ticks: { color: '#a8a29e' }, 
+                            grid: { color: 'rgba(45, 55, 72, 0.5)' } 
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateRecordsList() {
+            const container = document.getElementById('records-list');
+            
+            if (records.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p>記録がありません</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = records.map(record => {
+                const d = new Date(record.date);
+                const dateStr = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+                
+                const drinks = [];
+                if (record.beer_ml > 0) drinks.push(`🍺 ${record.beer_ml}ml`);
+                if (record.wine_ml > 0) drinks.push(`🍷 ${record.wine_ml}ml`);
+                if (record.sake_ml > 0) drinks.push(`🍶 ${record.sake_ml}ml`);
+                if (record.whisky_ml > 0) drinks.push(`🥃 ${record.whisky_ml}ml`);
+                if (record.shochu_ml > 0) drinks.push(`🍹 ${record.shochu_ml}ml`);
+                if (record.other_ml > 0) drinks.push(`${record.other_ml}ml`);
+                
+                const drinkStr = drinks.length > 0 ? drinks.join(', ') : '休肝日';
+                const workoutStr = record.workout ? ` | 🏃 ${record.workout}` : '';
+                
+                return `
+                    <div class="record-item">
+                        <div>
+                            <div class="record-date">${dateStr}</div>
+                            <div class="record-details">
+                                ${drinkStr}${workoutStr}
+                                <br>アルコール: ${record.alc_g}g | カロリー: ${Math.round(record.kcal)}kcal | ${record.cost}円
+                            </div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteRecord('${record.date}')">削除</button>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+        
+        function exportData() {
+            const dataStr = JSON.stringify(records, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `alcohol-records-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showMessage('JSON形式でエクスポートしました', 'success');
+        }
+        
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (!Array.isArray(imported)) {
+                        showMessage('無効なデータ形式です', 'error');
+                        return;
+                    }
+                    
+                    if (confirm(`${imported.length}件の記録をインポートしますか？\n既存のデータは上書きされます。`)) {
+                        records = imported;
+                        saveRecords();
+                        updateStats();
+                        updateCharts();
+                        updateRecordsList();
+                        showMessage(`✅ ${imported.length}件の記録をインポートしました！`, 'success');
+                    }
+                } catch (err) {
+                    console.error('インポートエラー:', err);
+                    showMessage('ファイルの読み込みに失敗しました', 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+        
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
