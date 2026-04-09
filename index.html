@@ -1590,47 +1590,57 @@
                     
                     showMessage(`📤 ${imported.length}件のデータをGoogle Sheetsに保存中...`, 'success');
                     
-                    // 各レコードをGoogle Sheetsに保存
+                    // バッチ処理：10件ずつ同時に送信
+                    const batchSize = 10;
                     let successCount = 0;
                     let errorCount = 0;
                     
-                    for (const record of imported) {
-                        try {
+                    for (let i = 0; i < imported.length; i += batchSize) {
+                        const batch = imported.slice(i, i + batchSize);
+                        
+                        // 並列処理
+                        const promises = batch.map(record => {
                             const params = new URLSearchParams({
                                 action: 'saveRecord',
                                 data: JSON.stringify(record)
                             });
                             
-                            const response = await fetch(`${GAS_API_URL}?${params.toString()}`, {
+                            return fetch(`${GAS_API_URL}?${params.toString()}`, {
                                 method: 'GET'
+                            })
+                            .then(res => res.json())
+                            .then(result => {
+                                if (result.success) {
+                                    return true;
+                                } else {
+                                    console.error('保存失敗:', result.error);
+                                    return false;
+                                }
+                            })
+                            .catch(err => {
+                                console.error('通信エラー:', err);
+                                return false;
                             });
-                            
-                            const result = await response.json();
-                            
-                            if (result.success) {
-                                successCount++;
-                            } else {
-                                errorCount++;
-                            }
-                            
-                            // 進捗表示（10件ごと）
-                            if (successCount % 10 === 0) {
-                                showMessage(`📤 ${successCount}/${imported.length}件保存中...`, 'success');
-                            }
-                            
-                        } catch (err) {
-                            errorCount++;
-                        }
+                        });
+                        
+                        const results = await Promise.all(promises);
+                        successCount += results.filter(r => r).length;
+                        errorCount += results.filter(r => !r).length;
+                        
+                        // 進捗表示
+                        showMessage(`📤 ${Math.min(i + batchSize, imported.length)}/${imported.length}件保存中...`, 'success');
                     }
                     
                     // ローカルにも保存
                     records = imported;
                     saveRecords();
+                    localStorage.setItem('alcohol-records-backup', JSON.stringify(records));
                     
                     // UI更新
                     updateStats();
                     updateCharts();
                     updateRecordsList();
+                    loadTodayData();
                     
                     if (errorCount > 0) {
                         showMessage(`⚠️ ${successCount}件保存、${errorCount}件失敗`, 'success');
