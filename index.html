@@ -639,7 +639,7 @@
         };
         
         // ===== Google Sheets連携設定 =====
-        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxZW1o4HYLGClFxK_Zdym1wInWiZ1Mp8Acaj0u00THI82m5CXgYBcUMxR1CsjhPYm5MkA/exec';
+        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwWNAGwcw9Kzy3aM1v1Uru7AqERMlG0fjaJfr-y6XCgf3Rx8xVhIuTuBRCzUC016QmOWw/exec';
         
         let records = [];
         let alcoholChart = null;
@@ -887,19 +887,18 @@
             const calculated = calculateEntry(entry);
             Object.assign(entry, calculated);
             
-            // Google Sheetsに保存
+            // Google Sheetsに保存（GETパラメータ方式）
             try {
                 showMessage('Google Sheetsに保存中...', 'success');
                 
-                const response = await fetch(GAS_API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'saveRecord',
-                        record: entry
-                    })
+                // データをURLパラメータとして送信
+                const params = new URLSearchParams({
+                    action: 'saveRecord',
+                    data: JSON.stringify(entry)
+                });
+                
+                const response = await fetch(`${GAS_API_URL}?${params.toString()}`, {
+                    method: 'GET'
                 });
                 
                 const result = await response.json();
@@ -965,15 +964,13 @@
             try {
                 showMessage('Google Sheetsから削除中...', 'success');
                 
-                const response = await fetch(GAS_API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'deleteRecord',
-                        date: date
-                    })
+                const params = new URLSearchParams({
+                    action: 'deleteRecord',
+                    date: date
+                });
+                
+                const response = await fetch(`${GAS_API_URL}?${params.toString()}`, {
+                    method: 'GET'
                 });
                 
                 const result = await response.json();
