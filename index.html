@@ -726,11 +726,16 @@
         function onDateChange() {
             const date = document.getElementById('entry-date').value;
             console.log('日付変更:', date);
+            console.log('総レコード数:', records.length);
             
             // その日の既存記録を探す
             const existing = records.find(r => r.date === date);
+            console.log('既存記録:', existing);
             
             if (existing) {
+                // デバッグメッセージ表示
+                showMessage(`📥 ${date}のデータを読み込みました`, 'success');
+                
                 // 既存記録がある場合は読み込む
                 document.getElementById('beer').value = existing.beer_ml || '';
                 document.getElementById('wine').value = existing.wine_ml || '';
@@ -741,6 +746,11 @@
                 document.getElementById('workout').value = existing.workout || '';
                 document.getElementById('workout-kcal').value = existing.workout_kcal || '';
             } else {
+                // デバッグメッセージ表示
+                if (records.length > 0) {
+                    showMessage(`📝 ${date}の記録はありません（新規入力）`, 'success');
+                }
+                
                 // 既存記録がない場合はクリア
                 clearInputs();
             }
