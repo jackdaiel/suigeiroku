@@ -539,6 +539,7 @@
                     <select id="workout">
                         <option value="">なし</option>
                         <option value="run">run</option>
+                        <option value="walk">walk</option>
                         <option value="muscle training">muscle training</option>
                         <option value="ride">ride</option>
                         <option value="swim">swim</option>
@@ -1570,12 +1571,12 @@
             showMessage('JSON形式でエクスポートしました', 'success');
         }
         
-        function importData(event) {
+        async function importData(event) {
             const file = event.target.files[0];
             if (!file) return;
             
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const imported = JSON.parse(e.target.result);
                     if (!Array.isArray(imported)) {
@@ -1583,14 +1584,60 @@
                         return;
                     }
                     
-                    if (confirm(`${imported.length}件の記録をインポートしますか？\n既存のデータは上書きされます。`)) {
-                        records = imported;
-                        saveRecords();
-                        updateStats();
-                        updateCharts();
-                        updateRecordsList();
-                        showMessage(`✅ ${imported.length}件の記録をインポートしました！`, 'success');
+                    if (!confirm(`${imported.length}件の記録をインポートしますか？\nGoogle Sheetsにも保存されます。`)) {
+                        return;
                     }
+                    
+                    showMessage(`📤 ${imported.length}件のデータをGoogle Sheetsに保存中...`, 'success');
+                    
+                    // 各レコードをGoogle Sheetsに保存
+                    let successCount = 0;
+                    let errorCount = 0;
+                    
+                    for (const record of imported) {
+                        try {
+                            const params = new URLSearchParams({
+                                action: 'saveRecord',
+                                data: JSON.stringify(record)
+                            });
+                            
+                            const response = await fetch(`${GAS_API_URL}?${params.toString()}`, {
+                                method: 'GET'
+                            });
+                            
+                            const result = await response.json();
+                            
+                            if (result.success) {
+                                successCount++;
+                            } else {
+                                errorCount++;
+                            }
+                            
+                            // 進捗表示（10件ごと）
+                            if (successCount % 10 === 0) {
+                                showMessage(`📤 ${successCount}/${imported.length}件保存中...`, 'success');
+                            }
+                            
+                        } catch (err) {
+                            errorCount++;
+                        }
+                    }
+                    
+                    // ローカルにも保存
+                    records = imported;
+                    saveRecords();
+                    
+                    // UI更新
+                    updateStats();
+                    updateCharts();
+                    updateRecordsList();
+                    
+                    if (errorCount > 0) {
+                        showMessage(`⚠️ ${successCount}件保存、${errorCount}件失敗`, 'success');
+                    } else {
+                        showMessage(`✅ ${successCount}件のデータをGoogle Sheetsに保存しました！`, 'success');
+                    }
+                    
                 } catch (err) {
                     console.error('インポートエラー:', err);
                     showMessage('ファイルの読み込みに失敗しました', 'error');
