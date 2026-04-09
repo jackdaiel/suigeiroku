@@ -56,6 +56,30 @@
             position: relative;
         }
         
+        .reload-btn {
+            position: absolute;
+            top: 15px;
+            right: 10px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .reload-btn:hover {
+            transform: rotate(180deg) scale(1.1);
+        }
+        
+        .reload-btn:active {
+            transform: rotate(180deg) scale(0.95);
+        }
+        
         h1 {
             font-family: 'Playfair Display', serif;
             font-size: clamp(2.5rem, 5vw, 4rem);
@@ -465,6 +489,7 @@
         <header>
             <h1>酔鯨録</h1>
             <p class="subtitle">Alcohol Tracking Journal</p>
+            <button class="reload-btn" onclick="reloadData()" title="データを再読み込み">🔄</button>
         </header>
         
         <div class="tabs">
@@ -675,6 +700,36 @@
             updateSummary();
         }
         
+        // データを再読み込み
+        async function reloadData() {
+            showMessage('🔄 データを再読み込み中...', 'success');
+            await loadFromGoogleSheets();
+            
+            // 今日のデータを自動読み込み
+            loadTodayData();
+        }
+        
+        // 今日のデータを読み込む
+        function loadTodayData() {
+            const today = document.getElementById('entry-date').value;
+            const existing = records.find(r => r.date === today);
+            
+            if (existing) {
+                showMessage(`📥 今日のデータを読み込みました`, 'success');
+                
+                document.getElementById('beer').value = existing.beer_ml || '';
+                document.getElementById('wine').value = existing.wine_ml || '';
+                document.getElementById('sake').value = existing.sake_ml || '';
+                document.getElementById('whisky').value = existing.whisky_ml || '';
+                document.getElementById('shochu').value = existing.shochu_ml || '';
+                document.getElementById('other').value = existing.other_ml || '';
+                document.getElementById('workout').value = existing.workout || '';
+                document.getElementById('workout-kcal').value = existing.workout_kcal || '';
+                
+                updateSummary();
+            }
+        }
+        
         // Google Sheetsからデータを読み込み
         async function loadFromGoogleSheets() {
             try {
@@ -696,7 +751,9 @@
                     updateCharts();
                     updateRecordsList();
                     
-                    showMessage(`✅ ${result.count}件のデータを読み込みました`, 'success');
+                    // 今日のデータを自動読み込み
+                    loadTodayData();
+                    
                     console.log('Google Sheetsから読み込み完了:', records.length, '件');
                 } else {
                     throw new Error(result.error || '読み込みエラー');
