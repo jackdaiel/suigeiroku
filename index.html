@@ -737,14 +737,56 @@
                 showMessage(`📥 ${date}のデータを読み込みました`, 'success');
                 
                 // 既存記録がある場合は読み込む
-                document.getElementById('beer').value = existing.beer_ml || '';
-                document.getElementById('wine').value = existing.wine_ml || '';
-                document.getElementById('sake').value = existing.sake_ml || '';
-                document.getElementById('whisky').value = existing.whisky_ml || '';
-                document.getElementById('shochu').value = existing.shochu_ml || '';
-                document.getElementById('other').value = existing.other_ml || '';
-                document.getElementById('workout').value = existing.workout || '';
-                document.getElementById('workout-kcal').value = existing.workout_kcal || '';
+                const beerEl = document.getElementById('beer');
+                const wineEl = document.getElementById('wine');
+                const sakeEl = document.getElementById('sake');
+                const whiskyEl = document.getElementById('whisky');
+                const shochuEl = document.getElementById('shochu');
+                const otherEl = document.getElementById('other');
+                const workoutEl = document.getElementById('workout');
+                const workoutKcalEl = document.getElementById('workout-kcal');
+                
+                beerEl.value = existing.beer_ml || '';
+                wineEl.value = existing.wine_ml || '';
+                sakeEl.value = existing.sake_ml || '';
+                whiskyEl.value = existing.whisky_ml || '';
+                shochuEl.value = existing.shochu_ml || '';
+                otherEl.value = existing.other_ml || '';
+                workoutEl.value = existing.workout || '';
+                workoutKcalEl.value = existing.workout_kcal || '';
+                
+                // 値が設定されたことを確認
+                console.log('Beer設定:', beerEl.value);
+                console.log('Wine設定:', wineEl.value);
+                
+                // 少し遅延させて再設定（念のため）
+                setTimeout(() => {
+                    if (beerEl.value !== (existing.beer_ml || '').toString()) {
+                        beerEl.value = existing.beer_ml || '';
+                    }
+                    if (wineEl.value !== (existing.wine_ml || '').toString()) {
+                        wineEl.value = existing.wine_ml || '';
+                    }
+                    if (sakeEl.value !== (existing.sake_ml || '').toString()) {
+                        sakeEl.value = existing.sake_ml || '';
+                    }
+                    if (whiskyEl.value !== (existing.whisky_ml || '').toString()) {
+                        whiskyEl.value = existing.whisky_ml || '';
+                    }
+                    if (shochuEl.value !== (existing.shochu_ml || '').toString()) {
+                        shochuEl.value = existing.shochu_ml || '';
+                    }
+                    if (otherEl.value !== (existing.other_ml || '').toString()) {
+                        otherEl.value = existing.other_ml || '';
+                    }
+                    if (workoutEl.value !== (existing.workout || '')) {
+                        workoutEl.value = existing.workout || '';
+                    }
+                    if (workoutKcalEl.value !== (existing.workout_kcal || '').toString()) {
+                        workoutKcalEl.value = existing.workout_kcal || '';
+                    }
+                    updateSummary();
+                }, 100);
             } else {
                 // デバッグメッセージ表示
                 if (records.length > 0) {
