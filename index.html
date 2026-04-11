@@ -657,49 +657,50 @@
                     </div>
                 </div>
                 
-                <div class="input-field" style="margin-bottom: 5px;">
-                    <label>🏃 Workout</label>
-                    <select id="workout">
-                        <option value="">none</option>
-                        <option value="run">run</option>
-                        <option value="walk">walk</option>
-                        <option value="muscle training">muscle training</option>
-                        <option value="ride">ride</option>
-                        <option value="swim">swim</option>
-                        <option value="maranic">maranic</option>
-                        <option value="muscle training+run">muscle training+run</option>
-                        <option value="muscle training+walk">muscle training+walk</option>
-                        <option value="muscle training+ride">muscle training+ride</option>
-                    </select>
-                </div>
-                
-                <div class="input-field" style="margin-bottom: 8px;">
-                    <label>🔥 Workout kcal</label>
-                    <input type="number" id="workout-kcal" placeholder="0" min="0" step="10" />
+                <div class="input-group-compact" style="background: rgba(212, 165, 116, 0.03); padding: 8px; border-radius: 8px; margin-top: 8px;">
+                    <div class="input-field-compact">
+                        <label>🏃 Workout</label>
+                        <select id="workout" style="padding: 8px 6px; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem;">
+                            <option value="">none</option>
+                            <option value="run">run</option>
+                            <option value="walk">walk</option>
+                            <option value="muscle training">muscle training</option>
+                            <option value="ride">ride</option>
+                            <option value="swim">swim</option>
+                            <option value="maranic">maranic</option>
+                            <option value="muscle training+run">muscle training+run</option>
+                            <option value="muscle training+walk">muscle training+walk</option>
+                            <option value="muscle training+ride">muscle training+ride</option>
+                        </select>
+                    </div>
+                    <div class="input-field-compact">
+                        <label>🔥 Workout kcal</label>
+                        <input type="number" id="workout-kcal" placeholder="0" min="0" step="10" />
+                    </div>
                 </div>
                 
                 <div class="summary-box-compact">
                     <div class="summary-item-compact" style="background: linear-gradient(135deg, rgba(212, 165, 116, 0.15) 0%, rgba(212, 165, 116, 0.05) 100%); border: 1px solid var(--accent);">
-                        <div class="summary-label-compact">Pure Alcohol</div>
-                        <div class="summary-value-compact" id="total-alcohol-display">0 g</div>
+                        <span class="summary-label-compact" style="display: inline; margin-right: 8px;">Pure Alcohol</span>
+                        <span class="summary-value-compact" id="total-alcohol-display" style="display: inline;">0 g</span>
                     </div>
                 </div>
                 
                 <div class="summary-box-compact">
                     <div class="summary-item-compact">
-                        <div class="summary-label-compact">Alcohol</div>
-                        <div class="summary-value-compact" id="drink-kcal-display">0 kcal</div>
+                        <span class="summary-label-compact" style="display: inline; margin-right: 8px;">Alcohol</span>
+                        <span class="summary-value-compact" id="drink-kcal-display" style="display: inline;">0 kcal</span>
                     </div>
                     <div class="summary-item-compact">
-                        <div class="summary-label-compact">Exercise</div>
-                        <div class="summary-value-compact" id="workout-kcal-display">0 kcal</div>
+                        <span class="summary-label-compact" style="display: inline; margin-right: 8px;">Exercise</span>
+                        <span class="summary-value-compact" id="workout-kcal-display" style="display: inline;">0 kcal</span>
                     </div>
                 </div>
                 
                 <div class="summary-box-compact">
                     <div class="summary-item-compact">
-                        <div class="summary-label-compact">Balance (B - A)</div>
-                        <div class="summary-value-compact" id="balance-display">0 kcal</div>
+                        <span class="summary-label-compact" style="display: inline; margin-right: 8px;">Balance (B - A)</span>
+                        <span class="summary-value-compact" id="balance-display" style="display: inline;">0 kcal</span>
                     </div>
                 </div>
                 
@@ -708,10 +709,11 @@
                 <div class="import-section">
                     <h3 style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 6px; font-weight: 400;">Data Management</h3>
                     
+                    <button class="btn-small" onclick="exportToExcel()" style="width: 100%; margin-bottom: 6px;">Excel</button>
+                    
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                        <button class="btn-small" onclick="exportToExcel()">Excel</button>
                         <button class="btn-small" onclick="exportData()">JSON Export</button>
-                        <button class="btn-small" onclick="document.getElementById('import-file').click()" style="grid-column: 1 / -1;">JSON Import</button>
+                        <button class="btn-small" onclick="document.getElementById('import-file').click()">JSON Import</button>
                     </div>
                     
                     <input type="file" id="import-file" accept=".json" onchange="importData(event)" style="display: none;" />
