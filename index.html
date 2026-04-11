@@ -495,7 +495,7 @@
         <div class="tabs">
             <button class="tab active" onclick="switchTab('input', event)">記録</button>
             <button class="tab" onclick="switchTab('stats', event)">統計</button>
-            <button class="tab" onclick="switchTab('history', event)">履歴</button>
+            <button class="tab" onclick="switchTab('longterm', event)">長期統計</button>
         </div>
         
         <div id="input-tab" class="tab-content active">
@@ -645,10 +645,45 @@
             </div>
         </div>
         
-        <div id="history-tab" class="tab-content">
+        <div id="longterm-tab" class="tab-content">
             <div class="card">
-                <h2>記録履歴</h2>
-                <div class="records-list" id="records-list"></div>
+                <h2>年間サマリー（2020-2026）</h2>
+                <div style="overflow-x: auto;">
+                    <table id="yearly-summary-table" style="width: 100%; color: var(--text-primary); border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--border);">
+                                <th style="padding: 12px; text-align: left;">年</th>
+                                <th style="padding: 12px; text-align: right;">総アルコール量</th>
+                                <th style="padding: 12px; text-align: right;">月平均</th>
+                                <th style="padding: 12px; text-align: right;">総運動消費</th>
+                                <th style="padding: 12px; text-align: right;">休肝日数</th>
+                            </tr>
+                        </thead>
+                        <tbody id="yearly-summary-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>年別アルコール量比較</h2>
+                <div class="chart-container">
+                    <canvas id="yearly-comparison-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>6年間のトレンド</h2>
+                <div class="chart-container">
+                    <canvas id="trend-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>アルコール種別内訳（全期間）</h2>
+                <div class="chart-container">
+                    <canvas id="drink-type-chart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -671,6 +706,9 @@
         let alcoholChart = null;
         let calorieChart = null;
         let monthlyChart = null;
+        let yearlyComparisonChart = null;
+        let trendChart = null;
+        let drinkTypeChart = null;
         
         function showMessage(message, type = 'success') {
             const messageArea = document.getElementById('message-area');
@@ -750,7 +788,7 @@
                     
                     updateStats();
                     updateCharts();
-                    updateRecordsList();
+                    updateLongTermStats();
                     
                     // 今日のデータを自動読み込み
                     loadTodayData();
@@ -768,14 +806,14 @@
                     records = JSON.parse(backup);
                     updateStats();
                     updateCharts();
-                    updateRecordsList();
+                    updateLongTermStats();
                     showMessage('⚠️ オフラインモード（バックアップデータを使用）', 'success');
                 } else {
                     // 最終手段：古いlocalStorageから読み込み
                     loadRecords();
                     updateStats();
                     updateCharts();
-                    updateRecordsList();
+                    updateLongTermStats();
                     showMessage('⚠️ ローカルデータを使用中（Sheets接続失敗）', 'success');
                 }
             }
@@ -1038,7 +1076,7 @@
                     
                     updateStats();
                     updateCharts();
-                    updateRecordsList();
+                    updateLongTermStats();
                     
                     showMessage('✅ Google Sheetsに保存しました！', 'success');
                 } else {
@@ -1060,7 +1098,7 @@
                 if (saveRecords()) {
                     updateStats();
                     updateCharts();
-                    updateRecordsList();
+                    updateLongTermStats();
                     showMessage('⚠️ ローカルのみに保存（Sheets接続失敗）', 'success');
                 }
             }
@@ -1092,7 +1130,7 @@
                     
                     updateStats();
                     updateCharts();
-                    updateRecordsList();
+                    updateLongTermStats();
                     showMessage('✅ 記録を削除しました', 'success');
                 } else {
                     throw new Error(result.error || '削除エラー');
@@ -1508,47 +1546,278 @@
             });
         }
         
-        function updateRecordsList() {
-            const container = document.getElementById('records-list');
+        
+        // 長期統計を更新
+        function updateLongTermStats() {
+            updateYearlySummaryTable();
+            updateYearlyComparisonChart();
+            updateTrendChart();
+            updateDrinkTypeChart();
+        }
+        
+        // 年間サマリーテーブル
+        function updateYearlySummaryTable() {
+            const yearlyData = {};
             
-            if (records.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📝</div>
-                        <p>記録がありません</p>
-                    </div>
-                `;
-                return;
-            }
+            records.forEach(r => {
+                const year = new Date(r.date).getFullYear();
+                if (!yearlyData[year]) {
+                    yearlyData[year] = {
+                        totalAlc: 0,
+                        totalWorkout: 0,
+                        restDays: 0,
+                        totalDays: 0
+                    };
+                }
+                yearlyData[year].totalAlc += r.alc_g || 0;
+                yearlyData[year].totalWorkout += r.workout_kcal || 0;
+                yearlyData[year].totalDays += 1;
+                if ((r.alc_g || 0) === 0) {
+                    yearlyData[year].restDays += 1;
+                }
+            });
             
-            container.innerHTML = records.map(record => {
-                const d = new Date(record.date);
-                const dateStr = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
-                
-                const drinks = [];
-                if (record.beer_ml > 0) drinks.push(`🍺 ${record.beer_ml}ml`);
-                if (record.wine_ml > 0) drinks.push(`🍷 ${record.wine_ml}ml`);
-                if (record.sake_ml > 0) drinks.push(`🍶 ${record.sake_ml}ml`);
-                if (record.whisky_ml > 0) drinks.push(`🥃 ${record.whisky_ml}ml`);
-                if (record.shochu_ml > 0) drinks.push(`🍹 ${record.shochu_ml}ml`);
-                if (record.other_ml > 0) drinks.push(`${record.other_ml}ml`);
-                
-                const drinkStr = drinks.length > 0 ? drinks.join(', ') : '休肝日';
-                const workoutStr = record.workout ? ` | 🏃 ${record.workout}` : '';
+            const tbody = document.getElementById('yearly-summary-body');
+            tbody.innerHTML = Object.keys(yearlyData).sort().reverse().map(year => {
+                const data = yearlyData[year];
+                const avgAlc = Math.round(data.totalAlc / 12 * 10) / 10;
                 
                 return `
-                    <div class="record-item">
-                        <div>
-                            <div class="record-date">${dateStr}</div>
-                            <div class="record-details">
-                                ${drinkStr}${workoutStr}
-                                <br>アルコール: ${record.alc_g}g | カロリー: ${Math.round(record.kcal)}kcal | ${record.cost}円
-                            </div>
-                        </div>
-                        <button class="delete-btn" onclick="deleteRecord('${record.date}')">削除</button>
-                    </div>
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 12px; color: var(--accent); font-weight: 600;">${year}年</td>
+                        <td style="padding: 12px; text-align: right;">${Math.round(data.totalAlc)} g</td>
+                        <td style="padding: 12px; text-align: right;">${avgAlc} g</td>
+                        <td style="padding: 12px; text-align: right;">${Math.round(data.totalWorkout).toLocaleString()} kcal</td>
+                        <td style="padding: 12px; text-align: right;">${data.restDays}日</td>
+                    </tr>
                 `;
             }).join('');
+        }
+        
+        // 年別比較グラフ
+        function updateYearlyComparisonChart() {
+            const yearlyData = {};
+            
+            records.forEach(r => {
+                const year = new Date(r.date).getFullYear();
+                if (!yearlyData[year]) {
+                    yearlyData[year] = { totalAlc: 0, totalWorkout: 0 };
+                }
+                yearlyData[year].totalAlc += r.alc_g || 0;
+                yearlyData[year].totalWorkout += r.workout_kcal || 0;
+            });
+            
+            const years = Object.keys(yearlyData).sort();
+            const alcData = years.map(y => Math.round(yearlyData[y].totalAlc));
+            const workoutData = years.map(y => Math.round(yearlyData[y].totalWorkout));
+            
+            const ctx = document.getElementById('yearly-comparison-chart').getContext('2d');
+            if (yearlyComparisonChart) yearlyComparisonChart.destroy();
+            
+            yearlyComparisonChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: years.map(y => y + '年'),
+                    datasets: [
+                        {
+                            label: 'アルコール量 (g)',
+                            data: alcData,
+                            backgroundColor: 'rgba(212, 165, 116, 0.7)',
+                            borderColor: '#d4a574',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '運動消費 (kcal)',
+                            data: workoutData,
+                            backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                            borderColor: '#22c55e',
+                            borderWidth: 1,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#a8a29e' } } },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            beginAtZero: true,
+                            ticks: { color: '#a8a29e' },
+                            grid: { color: 'rgba(45, 55, 72, 0.5)' },
+                            title: { display: true, text: 'アルコール量 (g)', color: '#d4a574' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            beginAtZero: true,
+                            ticks: { color: '#a8a29e' },
+                            grid: { drawOnChartArea: false },
+                            title: { display: true, text: '運動消費 (kcal)', color: '#22c55e' }
+                        },
+                        x: { ticks: { color: '#a8a29e' }, grid: { color: 'rgba(45, 55, 72, 0.5)' } }
+                    }
+                }
+            });
+        }
+        
+        // 6年間のトレンド
+        function updateTrendChart() {
+            const monthlyData = {};
+            
+            records.forEach(r => {
+                const date = new Date(r.date);
+                const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                if (!monthlyData[yearMonth]) {
+                    monthlyData[yearMonth] = { alc: 0, workout: 0 };
+                }
+                monthlyData[yearMonth].alc += r.alc_g || 0;
+                monthlyData[yearMonth].workout += r.workout_kcal || 0;
+            });
+            
+            const sortedMonths = Object.keys(monthlyData).sort();
+            const labels = sortedMonths.map(m => {
+                const [year, month] = m.split('-');
+                return `${year}/${month}`;
+            });
+            const alcData = sortedMonths.map(m => Math.round(monthlyData[m].alc));
+            const workoutData = sortedMonths.map(m => Math.round(monthlyData[m].workout));
+            
+            const ctx = document.getElementById('trend-chart').getContext('2d');
+            if (trendChart) trendChart.destroy();
+            
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'アルコール量 (g)',
+                            data: alcData,
+                            borderColor: '#d4a574',
+                            backgroundColor: 'rgba(212, 165, 116, 0.1)',
+                            tension: 0.3,
+                            borderWidth: 2,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '運動消費 (kcal)',
+                            data: workoutData,
+                            borderColor: '#22c55e',
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            tension: 0.3,
+                            borderWidth: 2,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#a8a29e' } } },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            beginAtZero: true,
+                            ticks: { color: '#a8a29e' },
+                            grid: { color: 'rgba(45, 55, 72, 0.5)' },
+                            title: { display: true, text: 'アルコール量 (g)', color: '#d4a574' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            beginAtZero: true,
+                            ticks: { color: '#a8a29e' },
+                            grid: { drawOnChartArea: false },
+                            title: { display: true, text: '運動消費 (kcal)', color: '#22c55e' }
+                        },
+                        x: { 
+                            ticks: { 
+                                color: '#a8a29e',
+                                maxRotation: 45,
+                                minRotation: 45
+                            }, 
+                            grid: { color: 'rgba(45, 55, 72, 0.5)' } 
+                        }
+                    }
+                }
+            });
+        }
+        
+        // アルコール種別内訳
+        function updateDrinkTypeChart() {
+            const drinkTotals = {
+                beer: 0,
+                wine: 0,
+                sake: 0,
+                whisky: 0,
+                shochu: 0,
+                other: 0
+            };
+            
+            records.forEach(r => {
+                drinkTotals.beer += r.beer_ml || 0;
+                drinkTotals.wine += r.wine_ml || 0;
+                drinkTotals.sake += r.sake_ml || 0;
+                drinkTotals.whisky += r.whisky_ml || 0;
+                drinkTotals.shochu += r.shochu_ml || 0;
+                drinkTotals.other += r.other_ml || 0;
+            });
+            
+            const ctx = document.getElementById('drink-type-chart').getContext('2d');
+            if (drinkTypeChart) drinkTypeChart.destroy();
+            
+            drinkTypeChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['🍺 ビール', '🍷 ワイン', '🍶 日本酒', '🥃 ウイスキー', '🍹 焼酎', 'その他'],
+                    datasets: [{
+                        data: [
+                            drinkTotals.beer,
+                            drinkTotals.wine,
+                            drinkTotals.sake,
+                            drinkTotals.whisky,
+                            drinkTotals.shochu,
+                            drinkTotals.other
+                        ],
+                        backgroundColor: [
+                            '#fbbf24',
+                            '#a855f7',
+                            '#ef4444',
+                            '#f97316',
+                            '#22c55e',
+                            '#6b7280'
+                        ],
+                        borderColor: '#1a2027',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#a8a29e', padding: 15 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${Math.round(value).toLocaleString()} ml (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
         
         function switchTab(tabName, event) {
@@ -1639,7 +1908,7 @@
                     // UI更新
                     updateStats();
                     updateCharts();
-                    updateRecordsList();
+                    updateLongTermStats();
                     loadTodayData();
                     
                     if (errorCount > 0) {
