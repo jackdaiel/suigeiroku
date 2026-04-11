@@ -42,6 +42,7 @@
             color: var(--text-primary);
             min-height: 100vh;
             padding: 20px;
+            padding-top: 140px;
             font-size: 0.9rem;
         }
         
@@ -51,34 +52,44 @@
         }
         
         header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #0f1419 0%, #1a2027 100%);
+            z-index: 100;
             text-align: center;
-            margin-bottom: 12px;
-            padding: 10px 0;
-            position: relative;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border);
         }
         
         .reload-btn {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: transparent;
-            color: var(--text-secondary);
-            border: none;
+            top: 12px;
+            right: 20px;
+            background: rgba(212, 165, 116, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(212, 165, 116, 0.3);
             border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            font-size: 1rem;
+            width: 40px;
+            height: 40px;
+            font-size: 1.1rem;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .reload-btn:hover {
-            color: var(--accent);
-            transform: rotate(180deg) scale(1.1);
+            background: rgba(212, 165, 116, 0.2);
+            border-color: var(--accent);
+            transform: rotate(360deg) scale(1.1);
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.4);
         }
         
         .reload-btn:active {
-            transform: rotate(180deg) scale(0.95);
+            transform: rotate(360deg) scale(0.95);
         }
         
         h1 {
@@ -125,9 +136,15 @@
         }
         
         .tabs {
+            position: fixed;
+            top: 65px;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #0f1419 0%, #1a2027 100%);
+            z-index: 99;
             display: flex;
             gap: 10px;
-            margin-bottom: 30px;
+            padding: 0 20px;
             border-bottom: 1px solid var(--border);
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -172,7 +189,7 @@
         .card {
             background: var(--bg-card);
             border-radius: 12px;
-            padding: 15px;
+            padding: 12px;
             margin-bottom: 15px;
             border: 1px solid var(--border);
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
@@ -675,16 +692,15 @@
                     </div>
                 </div>
                 
-                <button class="btn" onclick="saveEntry()">Save Record</button>
+                <button class="btn btn-secondary" onclick="saveEntry()">Save Record</button>
                 
                 <div class="import-section">
                     <h3 style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 6px; font-weight: 400;">Data Management</h3>
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                        <button class="btn-small" onclick="forceReloadFromSheets()">Reload</button>
                         <button class="btn-small" onclick="exportToExcel()">Excel</button>
                         <button class="btn-small" onclick="exportData()">JSON Export</button>
-                        <button class="btn-small" onclick="document.getElementById('import-file').click()">JSON Import</button>
+                        <button class="btn-small" onclick="document.getElementById('import-file').click()" style="grid-column: 1 / -1;">JSON Import</button>
                     </div>
                     
                     <input type="file" id="import-file" accept=".json" onchange="importData(event)" style="display: none;" />
@@ -987,6 +1003,10 @@
                     method: 'GET'
                 });
                 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const result = await response.json();
                 
                 if (result.success && result.records) {
@@ -1008,7 +1028,7 @@
                 }
             } catch (error) {
                 console.error('再読み込みエラー:', error);
-                showMessage('❌ 再読み込みに失敗しました', 'error');
+                showMessage(`❌ 再読み込みに失敗しました: ${error.message}`, 'error');
             }
         }
         
