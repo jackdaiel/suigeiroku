@@ -592,6 +592,10 @@
                 <div class="import-section">
                     <h3 style="color: var(--text-secondary); font-size: 1rem; margin-bottom: 15px;">📊 データ管理</h3>
                     
+                    <button class="btn btn-secondary" onclick="forceReloadFromSheets()">
+                        🔄 Google Sheetsから再読み込み
+                    </button>
+                    
                     <button class="btn btn-excel" onclick="exportToExcel()">
                         📥 Excel形式でエクスポート
                     </button>
@@ -778,6 +782,30 @@
         
         // Google Sheetsからデータを読み込み
         async function loadFromGoogleSheets() {
+            // キャッシュをチェック
+            const cachedData = localStorage.getItem('alcohol-records-cache');
+            const cacheTimestamp = localStorage.getItem('alcohol-records-cache-time');
+            const now = Date.now();
+            const cacheMaxAge = 24 * 60 * 60 * 1000; // 24時間
+            
+            // キャッシュが有効（24時間以内）ならキャッシュから読み込み
+            if (cachedData && cacheTimestamp && (now - parseInt(cacheTimestamp) < cacheMaxAge)) {
+                console.log('キャッシュからデータを読み込み');
+                records = JSON.parse(cachedData);
+                
+                updateStats();
+                updateCharts();
+                updateLongTermStats();
+                loadTodayData();
+                
+                showMessage('✅ データ読み込み完了（キャッシュ）', 'success');
+                
+                // バックグラウンドでSheetsと同期（サイレント）
+                syncInBackground();
+                return;
+            }
+            
+            // キャッシュなし or 期限切れ → Google Sheetsから読み込み
             try {
                 showMessage('Google Sheetsからデータを読み込み中...', 'success');
                 
@@ -790,16 +818,19 @@
                 if (result.success && result.records) {
                     records = result.records;
                     
-                    // localStorageにもバックアップ
+                    // キャッシュに保存
+                    localStorage.setItem('alcohol-records-cache', JSON.stringify(records));
+                    localStorage.setItem('alcohol-records-cache-time', now.toString());
+                    
+                    // バックアップも保存
                     localStorage.setItem('alcohol-records-backup', JSON.stringify(records));
                     
                     updateStats();
                     updateCharts();
                     updateLongTermStats();
-                    
-                    // 今日のデータを自動読み込み
                     loadTodayData();
                     
+                    showMessage(`✅ ${result.count}件のデータを読み込みました`, 'success');
                     console.log('Google Sheetsから読み込み完了:', records.length, '件');
                 } else {
                     throw new Error(result.error || '読み込みエラー');
@@ -807,22 +838,99 @@
             } catch (error) {
                 console.error('Google Sheets読み込みエラー:', error);
                 
-                // エラー時はlocalStorageから復元を試みる
-                const backup = localStorage.getItem('alcohol-records-backup');
-                if (backup) {
-                    records = JSON.parse(backup);
+                // エラー時はキャッシュまたはバックアップから復元
+                if (cachedData) {
+                    records = JSON.parse(cachedData);
                     updateStats();
                     updateCharts();
                     updateLongTermStats();
-                    showMessage('⚠️ オフラインモード（バックアップデータを使用）', 'success');
+                    loadTodayData();
+                    showMessage('⚠️ キャッシュデータを使用中', 'success');
                 } else {
-                    // 最終手段：古いlocalStorageから読み込み
-                    loadRecords();
+                    const backup = localStorage.getItem('alcohol-records-backup');
+                    if (backup) {
+                        records = JSON.parse(backup);
+                        updateStats();
+                        updateCharts();
+                        updateLongTermStats();
+                        showMessage('⚠️ バックアップデータを使用中', 'success');
+                    } else {
+                        loadRecords();
+                        updateStats();
+                        updateCharts();
+                        updateLongTermStats();
+                        showMessage('⚠️ ローカルデータを使用中', 'success');
+                    }
+                }
+            }
+        }
+        
+        // バックグラウンド同期（サイレント）
+        async function syncInBackground() {
+            try {
+                const response = await fetch(`${GAS_API_URL}?action=getData`, {
+                    method: 'GET'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.records) {
+                    // 新しいデータがあればキャッシュを更新
+                    const newDataCount = result.records.length;
+                    const cachedDataCount = records.length;
+                    
+                    if (newDataCount !== cachedDataCount) {
+                        records = result.records;
+                        localStorage.setItem('alcohol-records-cache', JSON.stringify(records));
+                        localStorage.setItem('alcohol-records-cache-time', Date.now().toString());
+                        localStorage.setItem('alcohol-records-backup', JSON.stringify(records));
+                        
+                        updateStats();
+                        updateCharts();
+                        updateLongTermStats();
+                        loadTodayData();
+                        
+                        console.log('バックグラウンド同期完了: 新しいデータを検出');
+                    } else {
+                        console.log('バックグラウンド同期完了: 変更なし');
+                    }
+                }
+            } catch (error) {
+                console.log('バックグラウンド同期スキップ（オフライン）');
+            }
+        }
+        
+        // 手動でGoogle Sheetsから強制再読み込み
+        async function forceReloadFromSheets() {
+            try {
+                showMessage('Google Sheetsから再読み込み中...', 'success');
+                
+                const response = await fetch(`${GAS_API_URL}?action=getData`, {
+                    method: 'GET'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.records) {
+                    records = result.records;
+                    
+                    // キャッシュとバックアップを更新
+                    localStorage.setItem('alcohol-records-cache', JSON.stringify(records));
+                    localStorage.setItem('alcohol-records-cache-time', Date.now().toString());
+                    localStorage.setItem('alcohol-records-backup', JSON.stringify(records));
+                    
                     updateStats();
                     updateCharts();
                     updateLongTermStats();
-                    showMessage('⚠️ ローカルデータを使用中（Sheets接続失敗）', 'success');
+                    loadTodayData();
+                    
+                    showMessage(`✅ ${result.records.length}件のデータを再読み込みしました`, 'success');
+                } else {
+                    throw new Error(result.error || '読み込みエラー');
                 }
+            } catch (error) {
+                console.error('再読み込みエラー:', error);
+                showMessage('❌ 再読み込みに失敗しました', 'error');
             }
         }
         
@@ -1069,7 +1177,9 @@
                     
                     records.sort((a, b) => new Date(b.date) - new Date(a.date));
                     
-                    // localStorageにバックアップ
+                    // キャッシュとバックアップを更新
+                    localStorage.setItem('alcohol-records-cache', JSON.stringify(records));
+                    localStorage.setItem('alcohol-records-cache-time', Date.now().toString());
                     localStorage.setItem('alcohol-records-backup', JSON.stringify(records));
                     
                     // 入力された項目のみ値を保持（空欄は空のまま）
@@ -1133,6 +1243,10 @@
                 if (result.success) {
                     // ローカルのrecordsも更新
                     records = records.filter(r => r.date !== date);
+                    
+                    // キャッシュとバックアップを更新
+                    localStorage.setItem('alcohol-records-cache', JSON.stringify(records));
+                    localStorage.setItem('alcohol-records-cache-time', Date.now().toString());
                     localStorage.setItem('alcohol-records-backup', JSON.stringify(records));
                     
                     updateStats();
