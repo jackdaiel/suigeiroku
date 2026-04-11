@@ -214,6 +214,13 @@
             transition: all 0.3s ease;
         }
         
+        /* 日付入力のカレンダーアイコンを強調 */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            filter: invert(0.8);
+            font-size: 1.2rem;
+        }
+        
         .input-field input:focus,
         .input-field select:focus {
             outline: none;
