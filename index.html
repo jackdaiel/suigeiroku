@@ -42,7 +42,7 @@
             background: linear-gradient(135deg, #0f1419 0%, #1a2027 100%);
             color: var(--text-primary);
             min-height: 100vh;
-            padding: 20px;
+            padding: 0;
             padding-top: 80px;
             padding-bottom: 70px;
             font-size: 0.9rem;
@@ -51,7 +51,7 @@
         .container {
             max-width: 100%;
             margin: 0 auto;
-            padding: 0;
+            padding: 0 12px;
         }
         
         header {
@@ -62,7 +62,7 @@
             background: linear-gradient(135deg, #0f1419 0%, #1a2027 100%);
             z-index: 100;
             text-align: center;
-            padding: 10px 20px;
+            padding: 10px 12px;
             border-bottom: 1px solid var(--border);
         }
         
@@ -193,7 +193,7 @@
         .card {
             background: var(--bg-card);
             border-radius: 12px;
-            padding: 12px;
+            padding: 10px;
             margin-bottom: 15px;
             border: 1px solid var(--border);
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
@@ -218,13 +218,14 @@
         .input-group-compact {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            gap: 6px;
             margin-bottom: 5px;
         }
         
         .input-field-compact {
             display: flex;
             flex-direction: column;
+            min-width: 0;
         }
         
         .input-field-compact label {
