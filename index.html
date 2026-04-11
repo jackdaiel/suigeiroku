@@ -52,28 +52,28 @@
         
         header {
             text-align: center;
-            margin-bottom: 20px;
-            padding: 15px 0;
+            margin-bottom: 12px;
+            padding: 10px 0;
             position: relative;
         }
         
         .reload-btn {
             position: absolute;
-            top: 15px;
+            top: 10px;
             right: 10px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            color: white;
+            background: transparent;
+            color: var(--text-secondary);
             border: none;
             border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            font-size: 1.2rem;
+            width: 36px;
+            height: 36px;
+            font-size: 1rem;
             cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
             transition: all 0.3s ease;
         }
         
         .reload-btn:hover {
+            color: var(--accent);
             transform: rotate(180deg) scale(1.1);
         }
         
@@ -83,20 +83,20 @@
         
         h1 {
             font-family: 'Noto Sans JP', sans-serif;
-            font-size: clamp(2rem, 5vw, 3rem);
+            font-size: 1.5rem;
             font-weight: 700;
             background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 10px;
+            margin-bottom: 3px;
             letter-spacing: 0.05em;
         }
         
         .subtitle {
-            font-size: 0.9rem;
+            font-size: 0.7rem;
             color: var(--text-secondary);
-            letter-spacing: 0.2em;
+            letter-spacing: 0.15em;
             text-transform: uppercase;
         }
         
@@ -198,7 +198,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 8px;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
         }
         
         .input-field-compact {
@@ -209,12 +209,12 @@
         .input-field-compact label {
             font-size: 0.9rem;
             color: var(--text-secondary);
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             font-weight: 400;
         }
         
         .input-field-compact input {
-            padding: 10px;
+            padding: 8px;
             background: var(--bg-dark);
             border: 1px solid var(--border);
             border-radius: 8px;
@@ -237,13 +237,13 @@
         .input-field label {
             font-size: 0.9rem;
             color: var(--text-secondary);
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             font-weight: 400;
         }
         
         .input-field input,
         .input-field select {
-            padding: 10px;
+            padding: 8px;
             background: var(--bg-dark);
             border: 1px solid var(--border);
             border-radius: 8px;
@@ -270,13 +270,13 @@
         .summary-box-compact {
             display: flex;
             gap: 8px;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
         }
         
         .summary-item-compact {
             flex: 1;
             background: linear-gradient(135deg, var(--bg-dark) 0%, #2d3748 100%);
-            padding: 10px;
+            padding: 8px;
             border-radius: 8px;
             border: 1px solid var(--border);
             text-align: center;
@@ -285,7 +285,7 @@
         .summary-label-compact {
             font-size: 0.9rem;
             color: var(--text-secondary);
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
         
         .summary-value-compact {
@@ -306,6 +306,22 @@
             transition: all 0.3s ease;
             width: 100%;
             margin-top: 10px;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 400;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-small:hover {
+            background: linear-gradient(135deg, #5a6578 0%, #3d4758 100%);
         }
         
         .btn:hover:not(:disabled) {
@@ -562,20 +578,20 @@
         <header>
             <h1>酔鯨録</h1>
             <p class="subtitle">Alcohol Tracking Journal</p>
-            <button class="reload-btn" onclick="reloadData()" title="データを再読み込み">🔄</button>
+            <button class="reload-btn" onclick="forceReloadFromSheets()" title="データを再読み込み">🔄</button>
         </header>
         
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('input', event)">記録</button>
-            <button class="tab" onclick="switchTab('stats', event)">今月</button>
-            <button class="tab" onclick="switchTab('longterm', event)">統計</button>
+            <button class="tab active" onclick="switchTab('input', event)">Record</button>
+            <button class="tab" onclick="switchTab('stats', event)">This Month</button>
+            <button class="tab" onclick="switchTab('longterm', event)">Stats</button>
         </div>
         
         <div id="input-tab" class="tab-content active">
             <div class="card">
                 <h2>Today's Record</h2>
                 
-                <div class="input-field" style="margin-bottom: 12px;">
+                <div class="input-field" style="margin-bottom: 8px;">
                     <label>Date</label>
                     <input type="date" id="entry-date" />
                 </div>
@@ -613,7 +629,7 @@
                     </div>
                 </div>
                 
-                <div class="input-field" style="margin-bottom: 12px;">
+                <div class="input-field" style="margin-bottom: 5px;">
                     <label>🏃 Workout</label>
                     <select id="workout">
                         <option value="">none</option>
@@ -629,13 +645,13 @@
                     </select>
                 </div>
                 
-                <div class="input-field" style="margin-bottom: 12px;">
+                <div class="input-field" style="margin-bottom: 8px;">
                     <label>🔥 Workout kcal</label>
                     <input type="number" id="workout-kcal" placeholder="0" min="0" step="10" />
                 </div>
                 
                 <div class="summary-box-compact">
-                    <div class="summary-item-compact">
+                    <div class="summary-item-compact" style="background: linear-gradient(135deg, rgba(212, 165, 116, 0.15) 0%, rgba(212, 165, 116, 0.05) 100%); border: 1px solid var(--accent);">
                         <div class="summary-label-compact">Pure Alcohol</div>
                         <div class="summary-value-compact" id="total-alcohol-display">0 g</div>
                     </div>
@@ -662,26 +678,16 @@
                 <button class="btn" onclick="saveEntry()">Save Record</button>
                 
                 <div class="import-section">
-                    <h3 style="color: var(--text-secondary); font-size: 1rem; margin-bottom: 10px;">Data Management</h3>
+                    <h3 style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 6px; font-weight: 400;">Data Management</h3>
                     
-                    <button class="btn btn-secondary" onclick="forceReloadFromSheets()">
-                        Reload from Sheets
-                    </button>
-                    
-                    <button class="btn btn-excel" onclick="exportToExcel()">
-                        Export to Excel
-                    </button>
-                    
-                    <button class="btn btn-secondary" onclick="exportData()">
-                        Export to JSON
-                    </button>
-                    
-                    <div class="file-input-wrapper">
-                        <input type="file" id="import-file" accept=".json" onchange="importData(event)" />
-                        <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">
-                            Import JSON
-                        </button>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                        <button class="btn-small" onclick="forceReloadFromSheets()">Reload</button>
+                        <button class="btn-small" onclick="exportToExcel()">Excel</button>
+                        <button class="btn-small" onclick="exportData()">JSON Export</button>
+                        <button class="btn-small" onclick="document.getElementById('import-file').click()">JSON Import</button>
                     </div>
+                    
+                    <input type="file" id="import-file" accept=".json" onchange="importData(event)" style="display: none;" />
                 </div>
             </div>
         </div>
