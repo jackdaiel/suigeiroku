@@ -494,8 +494,8 @@
         
         <div class="tabs">
             <button class="tab active" onclick="switchTab('input', event)">記録</button>
-            <button class="tab" onclick="switchTab('stats', event)">統計</button>
-            <button class="tab" onclick="switchTab('longterm', event)">長期統計</button>
+            <button class="tab" onclick="switchTab('stats', event)">今月</button>
+            <button class="tab" onclick="switchTab('longterm', event)">統計</button>
         </div>
         
         <div id="input-tab" class="tab-content active">
@@ -680,7 +680,7 @@
             </div>
             
             <div class="card">
-                <h2>アルコール種別内訳（全期間）</h2>
+                <h2>アルコール種別内訳（年別）</h2>
                 <div class="chart-container">
                     <canvas id="drink-type-chart"></canvas>
                 </div>
@@ -1557,16 +1557,21 @@
         
         // 年間サマリーテーブル
         function updateYearlySummaryTable() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth() + 1; // 1-12
             const yearlyData = {};
             
             records.forEach(r => {
-                const year = new Date(r.date).getFullYear();
+                const date = new Date(r.date);
+                const year = date.getFullYear();
                 if (!yearlyData[year]) {
                     yearlyData[year] = {
                         totalAlc: 0,
                         totalWorkout: 0,
                         restDays: 0,
-                        totalDays: 0
+                        totalDays: 0,
+                        monthsCount: 0
                     };
                 }
                 yearlyData[year].totalAlc += r.alc_g || 0;
@@ -1580,7 +1585,11 @@
             const tbody = document.getElementById('yearly-summary-body');
             tbody.innerHTML = Object.keys(yearlyData).sort().reverse().map(year => {
                 const data = yearlyData[year];
-                const avgAlc = Math.round(data.totalAlc / 12 * 10) / 10;
+                const yearNum = parseInt(year);
+                
+                // 月平均の計算：現在年は1月から今月まで、過去年は12ヶ月
+                const monthsForAvg = yearNum === currentYear ? currentMonth : 12;
+                const avgAlc = Math.round(data.totalAlc / monthsForAvg * 10) / 10;
                 
                 return `
                     <tr style="border-bottom: 1px solid var(--border);">
@@ -1750,51 +1759,88 @@
         
         // アルコール種別内訳
         function updateDrinkTypeChart() {
-            const drinkTotals = {
-                beer: 0,
-                wine: 0,
-                sake: 0,
-                whisky: 0,
-                shochu: 0,
-                other: 0
-            };
+            // 年別・種別ごとのデータを集計
+            const yearlyDrinkData = {};
             
             records.forEach(r => {
-                drinkTotals.beer += r.beer_ml || 0;
-                drinkTotals.wine += r.wine_ml || 0;
-                drinkTotals.sake += r.sake_ml || 0;
-                drinkTotals.whisky += r.whisky_ml || 0;
-                drinkTotals.shochu += r.shochu_ml || 0;
-                drinkTotals.other += r.other_ml || 0;
+                const year = new Date(r.date).getFullYear();
+                if (!yearlyDrinkData[year]) {
+                    yearlyDrinkData[year] = {
+                        beer: 0,
+                        wine: 0,
+                        sake: 0,
+                        whisky: 0,
+                        shochu: 0,
+                        other: 0
+                    };
+                }
+                yearlyDrinkData[year].beer += r.beer_ml || 0;
+                yearlyDrinkData[year].wine += r.wine_ml || 0;
+                yearlyDrinkData[year].sake += r.sake_ml || 0;
+                yearlyDrinkData[year].whisky += r.whisky_ml || 0;
+                yearlyDrinkData[year].shochu += r.shochu_ml || 0;
+                yearlyDrinkData[year].other += r.other_ml || 0;
             });
+            
+            const years = Object.keys(yearlyDrinkData).sort();
+            const beerData = years.map(y => Math.round(yearlyDrinkData[y].beer));
+            const wineData = years.map(y => Math.round(yearlyDrinkData[y].wine));
+            const sakeData = years.map(y => Math.round(yearlyDrinkData[y].sake));
+            const whiskyData = years.map(y => Math.round(yearlyDrinkData[y].whisky));
+            const shochuData = years.map(y => Math.round(yearlyDrinkData[y].shochu));
+            const otherData = years.map(y => Math.round(yearlyDrinkData[y].other));
             
             const ctx = document.getElementById('drink-type-chart').getContext('2d');
             if (drinkTypeChart) drinkTypeChart.destroy();
             
             drinkTypeChart = new Chart(ctx, {
-                type: 'doughnut',
+                type: 'bar',
                 data: {
-                    labels: ['🍺 ビール', '🍷 ワイン', '🍶 日本酒', '🥃 ウイスキー', '🍹 焼酎', 'その他'],
-                    datasets: [{
-                        data: [
-                            drinkTotals.beer,
-                            drinkTotals.wine,
-                            drinkTotals.sake,
-                            drinkTotals.whisky,
-                            drinkTotals.shochu,
-                            drinkTotals.other
-                        ],
-                        backgroundColor: [
-                            '#fbbf24',
-                            '#a855f7',
-                            '#ef4444',
-                            '#f97316',
-                            '#22c55e',
-                            '#6b7280'
-                        ],
-                        borderColor: '#1a2027',
-                        borderWidth: 2
-                    }]
+                    labels: years.map(y => y + '年'),
+                    datasets: [
+                        {
+                            label: '🍺 ビール',
+                            data: beerData,
+                            backgroundColor: '#fbbf24',
+                            borderColor: '#fbbf24',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '🍷 ワイン',
+                            data: wineData,
+                            backgroundColor: '#a855f7',
+                            borderColor: '#a855f7',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '🍶 日本酒',
+                            data: sakeData,
+                            backgroundColor: '#ef4444',
+                            borderColor: '#ef4444',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '🥃 ウイスキー',
+                            data: whiskyData,
+                            backgroundColor: '#f97316',
+                            borderColor: '#f97316',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '🍹 焼酎',
+                            data: shochuData,
+                            backgroundColor: '#22c55e',
+                            borderColor: '#22c55e',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'その他',
+                            data: otherData,
+                            backgroundColor: '#6b7280',
+                            borderColor: '#6b7280',
+                            borderWidth: 1
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
@@ -1802,12 +1848,39 @@
                     plugins: {
                         legend: {
                             position: 'bottom',
-                            labels: { color: '#a8a29e', padding: 15 }
+                            labels: { color: '#a8a29e', padding: 10 }
                         },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    const label = context.label || '';
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return `${label}: ${value.toLocaleString()} ml`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            ticks: { color: '#a8a29e' },
+                            grid: { color: 'rgba(45, 55, 72, 0.5)' }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: { color: '#a8a29e' },
+                            grid: { color: 'rgba(45, 55, 72, 0.5)' },
+                            title: {
+                                display: true,
+                                text: '消費量 (ml)',
+                                color: '#a8a29e'
+                            }
+                        }
+                    }
+                }
+            });
+        }
                                     const value = context.parsed;
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percentage = ((value / total) * 100).toFixed(1);
