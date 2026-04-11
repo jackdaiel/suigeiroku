@@ -1881,17 +1881,6 @@
                 }
             });
         }
-                                    const value = context.parsed;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = ((value / total) * 100).toFixed(1);
-                                    return `${label}: ${Math.round(value).toLocaleString()} ml (${percentage}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
         
         function switchTab(tabName, event) {
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
