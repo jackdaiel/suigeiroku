@@ -2,9 +2,9 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="酔鯨録">
     <meta name="theme-color" content="#0f1419">
     <title>酔鯨録 Pro</title>
@@ -40,7 +40,7 @@
         
         body {
             font-family: 'Noto Sans JP', sans-serif;
-            background: linear-gradient(135deg, #0f1419 0%, #1a2027 100%);
+            background: #000000;
             color: var(--text-primary);
             min-height: 100vh;
             padding: 0;
@@ -53,6 +53,8 @@
             max-width: 100%;
             margin: 0 auto;
             padding: 0 12px;
+            background: linear-gradient(135deg, #0f1419 0%, #1a2027 100%);
+            min-height: calc(100vh - 150px);
         }
         
         header {
@@ -60,7 +62,7 @@
             top: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(135deg, #0f1419 0%, #1a2027 100%);
+            background: #000000;
             z-index: 100;
             text-align: center;
             padding: 10px 12px;
