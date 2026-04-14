@@ -779,13 +779,6 @@
             </div>
             
             <div class="card">
-                <h3 style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 8px; font-weight: 500;">Annual Rest Days</h3>
-                <div class="chart-container">
-                    <canvas id="rest-days-chart"></canvas>
-                </div>
-            </div>
-            
-            <div class="card">
                 <h3 style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 8px; font-weight: 500;">6-Year Trend</h3>
                 <div class="chart-container">
                     <canvas id="trend-chart"></canvas>
@@ -850,7 +843,51 @@
             // 日付変更時のイベントリスナー
             document.getElementById('entry-date').addEventListener('change', onDateChange);
             
+            // タブスワイプ機能を追加
+            setupTabSwipe();
+            
             updateSummary();
+        }
+        
+        // タブスワイプ機能
+        function setupTabSwipe() {
+            const container = document.querySelector('.container');
+            let touchStartX = 0;
+            let touchEndX = 0;
+            
+            container.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+            
+            container.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            }, { passive: true });
+            
+            function handleSwipe() {
+                const swipeThreshold = 50; // スワイプと認識する最小距離
+                const diff = touchStartX - touchEndX;
+                
+                if (Math.abs(diff) < swipeThreshold) return;
+                
+                const tabs = ['record', 'stats', 'longterm'];
+                const activeTab = document.querySelector('.tab.active');
+                const currentIndex = Array.from(document.querySelectorAll('.tab')).indexOf(activeTab);
+                
+                let newIndex;
+                if (diff > 0) {
+                    // 左スワイプ（次のタブへ）
+                    newIndex = Math.min(currentIndex + 1, tabs.length - 1);
+                } else {
+                    // 右スワイプ（前のタブへ）
+                    newIndex = Math.max(currentIndex - 1, 0);
+                }
+                
+                if (newIndex !== currentIndex) {
+                    const newTab = document.querySelectorAll('.tab')[newIndex];
+                    newTab.click();
+                }
+            }
         }
         
         // データを再読み込み
@@ -1788,7 +1825,6 @@
         // 長期統計を更新
         function updateLongTermStats() {
             updateYearlyComparisonChart();
-            updateRestDaysChart();
             updateTrendChart();
             updateDrinkTypeChart();
         }
@@ -1844,19 +1880,27 @@
         // 年別比較グラフ
         function updateYearlyComparisonChart() {
             const yearlyData = {};
+            const yearlyRestDays = {};
             
             records.forEach(r => {
                 const year = new Date(r.date).getFullYear();
                 if (!yearlyData[year]) {
                     yearlyData[year] = { totalAlc: 0, totalWorkout: 0 };
+                    yearlyRestDays[year] = 0;
                 }
                 yearlyData[year].totalAlc += r.alc_g || 0;
                 yearlyData[year].totalWorkout += r.workout_kcal || 0;
+                
+                // 休肝日カウント
+                if ((r.alc_g || 0) === 0) {
+                    yearlyRestDays[year]++;
+                }
             });
             
             const years = Object.keys(yearlyData).sort();
             const alcData = years.map(y => Math.round(yearlyData[y].totalAlc));
             const workoutData = years.map(y => Math.round(yearlyData[y].totalWorkout));
+            const restDaysData = years.map(y => yearlyRestDays[y]);
             
             const ctx = document.getElementById('yearly-comparison-chart').getContext('2d');
             if (yearlyComparisonChart) yearlyComparisonChart.destroy();
@@ -1881,13 +1925,21 @@
                             borderColor: '#22c55e',
                             borderWidth: 1,
                             yAxisID: 'y1'
+                        },
+                        {
+                            label: 'Rest Days',
+                            data: restDaysData,
+                            backgroundColor: 'rgba(251, 191, 36, 0.7)',
+                            borderColor: '#fbbf24',
+                            borderWidth: 1,
+                            yAxisID: 'y2'
                         }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#a8a29e' } } },
+                    plugins: { legend: { labels: { color: '#a8a29e', font: { size: 10 } } } },
                     scales: {
                         y: {
                             type: 'linear',
@@ -1895,7 +1947,7 @@
                             beginAtZero: true,
                             ticks: { color: '#a8a29e' },
                             grid: { color: 'rgba(45, 55, 72, 0.5)' },
-                            title: { display: true, text: 'Alcohol (g)', color: '#d4a574' }
+                            title: { display: true, text: 'Alcohol (g)', color: '#d4a574', font: { size: 10 } }
                         },
                         y1: {
                             type: 'linear',
@@ -1903,7 +1955,15 @@
                             beginAtZero: true,
                             ticks: { color: '#a8a29e' },
                             grid: { drawOnChartArea: false },
-                            title: { display: true, text: 'Exercise (kcal)', color: '#22c55e' }
+                            title: { display: true, text: 'Exercise (kcal)', color: '#22c55e', font: { size: 10 } }
+                        },
+                        y2: {
+                            type: 'linear',
+                            position: 'right',
+                            beginAtZero: true,
+                            ticks: { color: '#a8a29e' },
+                            grid: { drawOnChartArea: false },
+                            title: { display: true, text: 'Rest Days', color: '#fbbf24', font: { size: 10 } }
                         },
                         x: { ticks: { color: '#a8a29e' }, grid: { color: 'rgba(45, 55, 72, 0.5)' } }
                     }
