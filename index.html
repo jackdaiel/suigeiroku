@@ -772,40 +772,28 @@
         
         <div id="longterm-tab" class="tab-content">
             <div class="card">
-                <h2>年間サマリー（2020-2026）</h2>
-                <div style="overflow-x: auto;">
-                    <table id="yearly-summary-table" style="width: 100%; color: var(--text-primary); border-collapse: collapse;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid var(--border);">
-                                <th style="padding: 12px; text-align: left;">年</th>
-                                <th style="padding: 12px; text-align: right;">総アルコール量</th>
-                                <th style="padding: 12px; text-align: right;">月平均</th>
-                                <th style="padding: 12px; text-align: right;">総運動消費</th>
-                                <th style="padding: 12px; text-align: right;">休肝日数</th>
-                            </tr>
-                        </thead>
-                        <tbody id="yearly-summary-body">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <div class="card">
-                <h2>年別アルコール量比較</h2>
+                <h3 style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 8px; font-weight: 500;">Annual Summary</h3>
                 <div class="chart-container">
                     <canvas id="yearly-comparison-chart"></canvas>
                 </div>
             </div>
             
             <div class="card">
-                <h2>6年間のトレンド</h2>
+                <h3 style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 8px; font-weight: 500;">Annual Rest Days</h3>
+                <div class="chart-container">
+                    <canvas id="rest-days-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3 style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 8px; font-weight: 500;">6-Year Trend</h3>
                 <div class="chart-container">
                     <canvas id="trend-chart"></canvas>
                 </div>
             </div>
             
             <div class="card">
-                <h2>アルコール種別内訳（年別）</h2>
+                <h3 style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 8px; font-weight: 500;">Drink Type Breakdown (by Year)</h3>
                 <div class="chart-container">
                     <canvas id="drink-type-chart"></canvas>
                 </div>
@@ -832,6 +820,7 @@
         let calorieChart = null;
         let monthlyChart = null;
         let yearlyComparisonChart = null;
+        let restDaysChart = null;
         let trendChart = null;
         let drinkTypeChart = null;
         
@@ -1798,8 +1787,8 @@
         
         // 長期統計を更新
         function updateLongTermStats() {
-            updateYearlySummaryTable();
             updateYearlyComparisonChart();
+            updateRestDaysChart();
             updateTrendChart();
             updateDrinkTypeChart();
         }
@@ -1875,10 +1864,10 @@
             yearlyComparisonChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: years.map(y => y + '年'),
+                    labels: years,
                     datasets: [
                         {
-                            label: 'アルコール量 (g)',
+                            label: 'Alcohol (g)',
                             data: alcData,
                             backgroundColor: 'rgba(212, 165, 116, 0.7)',
                             borderColor: '#d4a574',
@@ -1886,7 +1875,7 @@
                             yAxisID: 'y'
                         },
                         {
-                            label: '運動消費 (kcal)',
+                            label: 'Exercise (kcal)',
                             data: workoutData,
                             backgroundColor: 'rgba(34, 197, 94, 0.7)',
                             borderColor: '#22c55e',
@@ -1906,7 +1895,7 @@
                             beginAtZero: true,
                             ticks: { color: '#a8a29e' },
                             grid: { color: 'rgba(45, 55, 72, 0.5)' },
-                            title: { display: true, text: 'アルコール量 (g)', color: '#d4a574' }
+                            title: { display: true, text: 'Alcohol (g)', color: '#d4a574' }
                         },
                         y1: {
                             type: 'linear',
@@ -1914,7 +1903,57 @@
                             beginAtZero: true,
                             ticks: { color: '#a8a29e' },
                             grid: { drawOnChartArea: false },
-                            title: { display: true, text: '運動消費 (kcal)', color: '#22c55e' }
+                            title: { display: true, text: 'Exercise (kcal)', color: '#22c55e' }
+                        },
+                        x: { ticks: { color: '#a8a29e' }, grid: { color: 'rgba(45, 55, 72, 0.5)' } }
+                    }
+                }
+            });
+        }
+        
+        // 年間休肝日数
+        function updateRestDaysChart() {
+            const yearlyRestDays = {};
+            
+            records.forEach(r => {
+                const year = new Date(r.date).getFullYear();
+                if (!yearlyRestDays[year]) {
+                    yearlyRestDays[year] = 0;
+                }
+                // アルコール量が0の日をカウント
+                if ((r.alc_g || 0) === 0) {
+                    yearlyRestDays[year]++;
+                }
+            });
+            
+            const years = Object.keys(yearlyRestDays).sort();
+            const restDaysData = years.map(y => yearlyRestDays[y]);
+            
+            const ctx = document.getElementById('rest-days-chart').getContext('2d');
+            if (restDaysChart) restDaysChart.destroy();
+            
+            restDaysChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: years,
+                    datasets: [{
+                        label: 'Rest Days',
+                        data: restDaysData,
+                        backgroundColor: 'rgba(251, 191, 36, 0.7)',
+                        borderColor: '#fbbf24',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#a8a29e' } } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#a8a29e', stepSize: 10 },
+                            grid: { color: 'rgba(45, 55, 72, 0.5)' },
+                            title: { display: true, text: 'Days', color: '#fbbf24' }
                         },
                         x: { ticks: { color: '#a8a29e' }, grid: { color: 'rgba(45, 55, 72, 0.5)' } }
                     }
@@ -1953,7 +1992,7 @@
                     labels: labels,
                     datasets: [
                         {
-                            label: 'アルコール量 (g)',
+                            label: 'Alcohol (g)',
                             data: alcData,
                             borderColor: '#d4a574',
                             backgroundColor: 'rgba(212, 165, 116, 0.1)',
@@ -1962,7 +2001,7 @@
                             yAxisID: 'y'
                         },
                         {
-                            label: '運動消費 (kcal)',
+                            label: 'Exercise (kcal)',
                             data: workoutData,
                             borderColor: '#22c55e',
                             backgroundColor: 'rgba(34, 197, 94, 0.1)',
@@ -1983,7 +2022,7 @@
                             beginAtZero: true,
                             ticks: { color: '#a8a29e' },
                             grid: { color: 'rgba(45, 55, 72, 0.5)' },
-                            title: { display: true, text: 'アルコール量 (g)', color: '#d4a574' }
+                            title: { display: true, text: 'Alcohol (g)', color: '#d4a574' }
                         },
                         y1: {
                             type: 'linear',
@@ -1991,7 +2030,7 @@
                             beginAtZero: true,
                             ticks: { color: '#a8a29e' },
                             grid: { drawOnChartArea: false },
-                            title: { display: true, text: '運動消費 (kcal)', color: '#22c55e' }
+                            title: { display: true, text: 'Exercise (kcal)', color: '#22c55e' }
                         },
                         x: { 
                             ticks: { 
@@ -2045,45 +2084,45 @@
             drinkTypeChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: years.map(y => y + '年'),
+                    labels: years,
                     datasets: [
                         {
-                            label: '🍺 ビール',
+                            label: '🍺 Beer',
                             data: beerData,
                             backgroundColor: '#fbbf24',
                             borderColor: '#fbbf24',
                             borderWidth: 1
                         },
                         {
-                            label: '🍷 ワイン',
+                            label: '🍷 Wine',
                             data: wineData,
                             backgroundColor: '#a855f7',
                             borderColor: '#a855f7',
                             borderWidth: 1
                         },
                         {
-                            label: '🍶 日本酒',
+                            label: '🍶 Sake',
                             data: sakeData,
                             backgroundColor: '#ef4444',
                             borderColor: '#ef4444',
                             borderWidth: 1
                         },
                         {
-                            label: '🥃 ウイスキー',
+                            label: '🥃 Whisky',
                             data: whiskyData,
                             backgroundColor: '#f97316',
                             borderColor: '#f97316',
                             borderWidth: 1
                         },
                         {
-                            label: '🍹 焼酎',
+                            label: '🍹 Shochu',
                             data: shochuData,
                             backgroundColor: '#22c55e',
                             borderColor: '#22c55e',
                             borderWidth: 1
                         },
                         {
-                            label: 'その他',
+                            label: 'Other',
                             data: otherData,
                             backgroundColor: '#6b7280',
                             borderColor: '#6b7280',
