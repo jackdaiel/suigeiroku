@@ -7,6 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="酔鯨録">
     <meta name="theme-color" content="#0f1419">
+    <link rel="apple-touch-icon" href="suigeiroku-icon-180.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="suigeiroku-icon-512.png">
     <title>酔鯨録 Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -779,6 +781,13 @@
             </div>
             
             <div class="card">
+                <h3 style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 8px; font-weight: 500;">Exercise Type Breakdown (by Year)</h3>
+                <div class="chart-container">
+                    <canvas id="exercise-type-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
                 <h3 style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 8px; font-weight: 500;">6-Year Trend</h3>
                 <div class="chart-container">
                     <canvas id="trend-chart"></canvas>
@@ -816,6 +825,7 @@
         let restDaysChart = null;
         let trendChart = null;
         let drinkTypeChart = null;
+        let exerciseTypeChart = null;
         
         function showMessage(message, type = 'success') {
             const messageArea = document.getElementById('message-area');
@@ -1825,6 +1835,7 @@
         // 長期統計を更新
         function updateLongTermStats() {
             updateYearlyComparisonChart();
+            updateExerciseTypeChart();
             updateTrendChart();
             updateDrinkTypeChart();
         }
@@ -2016,6 +2027,115 @@
                             title: { display: true, text: 'Days', color: '#fbbf24' }
                         },
                         x: { ticks: { color: '#a8a29e' }, grid: { color: 'rgba(45, 55, 72, 0.5)' } }
+                    }
+                }
+            });
+        }
+        
+        // 運動種別内訳（年別）
+        function updateExerciseTypeChart() {
+            // 年別・運動種別ごとのデータを集計
+            const yearlyExerciseData = {};
+            
+            records.forEach(r => {
+                const year = new Date(r.date).getFullYear();
+                if (!yearlyExerciseData[year]) {
+                    yearlyExerciseData[year] = {
+                        run: 0,
+                        ride: 0,
+                        walk: 0,
+                        other: 0
+                    };
+                }
+                
+                // workout_typeに基づいて分類
+                const workoutType = (r.workout_type || '').toLowerCase();
+                const kcal = r.workout_kcal || 0;
+                
+                if (workoutType.includes('run') || workoutType.includes('maranic')) {
+                    yearlyExerciseData[year].run += kcal;
+                } else if (workoutType.includes('ride')) {
+                    yearlyExerciseData[year].ride += kcal;
+                } else if (workoutType.includes('walk')) {
+                    yearlyExerciseData[year].walk += kcal;
+                } else if (kcal > 0) {
+                    yearlyExerciseData[year].other += kcal;
+                }
+            });
+            
+            const years = Object.keys(yearlyExerciseData).sort();
+            const runData = years.map(y => Math.round(yearlyExerciseData[y].run));
+            const rideData = years.map(y => Math.round(yearlyExerciseData[y].ride));
+            const walkData = years.map(y => Math.round(yearlyExerciseData[y].walk));
+            const otherData = years.map(y => Math.round(yearlyExerciseData[y].other));
+            
+            const ctx = document.getElementById('exercise-type-chart').getContext('2d');
+            if (exerciseTypeChart) exerciseTypeChart.destroy();
+            
+            exerciseTypeChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: years,
+                    datasets: [
+                        {
+                            label: '🏃 Run',
+                            data: runData,
+                            backgroundColor: '#ef4444',
+                            borderColor: '#ef4444',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '🚴 Ride',
+                            data: rideData,
+                            backgroundColor: '#3b82f6',
+                            borderColor: '#3b82f6',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '🚶 Walk',
+                            data: walkData,
+                            backgroundColor: '#22c55e',
+                            borderColor: '#22c55e',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '💪 Other',
+                            data: otherData,
+                            backgroundColor: '#a855f7',
+                            borderColor: '#a855f7',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#a8a29e', padding: 10, font: { size: 10 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + ' kcal';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            ticks: { color: '#a8a29e' },
+                            grid: { color: 'rgba(45, 55, 72, 0.5)' }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: { color: '#a8a29e' },
+                            grid: { color: 'rgba(45, 55, 72, 0.5)' },
+                            title: { display: true, text: 'kcal', color: '#a8a29e', font: { size: 10 } }
+                        }
                     }
                 }
             });
