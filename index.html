@@ -2037,6 +2037,14 @@
             // 年別・運動種別ごとのデータを集計
             const yearlyExerciseData = {};
             
+            // デバッグ用：運動データがあるレコードを確認
+            const workoutRecords = records.filter(r => (r.workout_kcal || 0) > 0);
+            console.log('=== Exercise Type Chart Debug ===');
+            console.log('Total records with workout:', workoutRecords.length);
+            if (workoutRecords.length > 0) {
+                console.log('Sample workout record:', workoutRecords[0]);
+            }
+            
             records.forEach(r => {
                 const year = new Date(r.date).getFullYear();
                 if (!yearlyExerciseData[year]) {
@@ -2048,9 +2056,11 @@
                     };
                 }
                 
-                // workout_typeに基づいて分類
-                const workoutType = (r.workout_type || '').toLowerCase();
+                // workout_typeまたはworkoutフィールドに基づいて分類
+                const workoutType = (r.workout_type || r.workout || '').toLowerCase();
                 const kcal = r.workout_kcal || 0;
+                
+                if (kcal === 0) return; // kcalが0の場合はスキップ
                 
                 if (workoutType.includes('run') || workoutType.includes('maranic')) {
                     yearlyExerciseData[year].run += kcal;
@@ -2058,10 +2068,13 @@
                     yearlyExerciseData[year].ride += kcal;
                 } else if (workoutType.includes('walk')) {
                     yearlyExerciseData[year].walk += kcal;
-                } else if (kcal > 0) {
+                } else {
+                    console.log('Other workout:', { date: r.date, type: workoutType, kcal });
                     yearlyExerciseData[year].other += kcal;
                 }
             });
+            
+            console.log('Yearly exercise data:', yearlyExerciseData);
             
             const years = Object.keys(yearlyExerciseData).sort();
             const runData = years.map(y => Math.round(yearlyExerciseData[y].run));
