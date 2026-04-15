@@ -148,7 +148,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(135deg, #d4a574 0%, #e6b887 100%);
+            background: linear-gradient(135deg, #f4c542 0%, #f0b429 100%);
             z-index: 100;
             display: flex;
             justify-content: space-around;
@@ -923,7 +923,7 @@
                 document.getElementById('whisky').value = existing.whisky_ml || '';
                 document.getElementById('shochu').value = existing.shochu_ml || '';
                 document.getElementById('other').value = existing.other_ml || '';
-                document.getElementById('workout').value = existing.workout || '';
+                document.getElementById('workout').value = existing.workout_type || existing.workout || '';
                 document.getElementById('workout-kcal').value = existing.workout_kcal || '';
                 
                 updateSummary();
@@ -1297,7 +1297,7 @@
                 whisky_ml: parseInt(whiskyVal) || 0,
                 shochu_ml: parseInt(shochuVal) || 0,
                 other_ml: parseInt(otherVal) || 0,
-                workout: document.getElementById('workout').value || '',
+                workout_type: document.getElementById('workout').value || '',
                 workout_kcal: parseInt(workoutKcalVal) || 0
             };
             
