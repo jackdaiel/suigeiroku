@@ -1280,6 +1280,11 @@
                 return;
             }
             
+            // ボタンを無効化（二重送信防止）
+            const saveBtn = event.target;
+            saveBtn.disabled = true;
+            saveBtn.style.opacity = '0.5';
+            
             // 入力された値のみ取得（空欄は0として保存）
             const beerVal = document.getElementById('beer').value;
             const wineVal = document.getElementById('wine').value;
@@ -1306,7 +1311,7 @@
             
             // Google Sheetsに保存（GETパラメータ方式）
             try {
-                showMessage('Google Sheetsに保存中...', 'success');
+                showMessage('💾 保存中...', 'success');
                 
                 // データをURLパラメータとして送信
                 const params = new URLSearchParams({
@@ -1336,25 +1341,26 @@
                     localStorage.setItem('alcohol-records-cache-time', Date.now().toString());
                     localStorage.setItem('alcohol-records-backup', JSON.stringify(records));
                     
-                    // 入力された項目のみ値を保持（空欄は空のまま）
-                    if (!beerVal) document.getElementById('beer').value = '';
-                    if (!wineVal) document.getElementById('wine').value = '';
-                    if (!sakeVal) document.getElementById('sake').value = '';
-                    if (!whiskyVal) document.getElementById('whisky').value = '';
-                    if (!shochuVal) document.getElementById('shochu').value = '';
-                    if (!otherVal) document.getElementById('other').value = '';
-                    if (!workoutKcalVal) document.getElementById('workout-kcal').value = '';
+                    // フォームはクリアしない（入力値を保持）
                     
                     updateStats();
                     updateCharts();
                     updateLongTermStats();
                     
-                    showMessage('✅ Google Sheetsに保存しました！', 'success');
+                    showMessage('✅ 保存完了！', 'success');
+                    
+                    // ボタンを再有効化
+                    saveBtn.disabled = false;
+                    saveBtn.style.opacity = '1';
                 } else {
                     throw new Error(result.error || '保存エラー');
                 }
             } catch (error) {
                 console.error('Google Sheets保存エラー:', error);
+                
+                // ボタンを再有効化
+                saveBtn.disabled = false;
+                saveBtn.style.opacity = '1';
                 
                 // エラー時はlocalStorageのみに保存
                 const existingIndex = records.findIndex(r => r.date === date);
