@@ -955,11 +955,12 @@
                 return;
             }
             
-            // キャッシュなし or 期限切れ → Google Sheetsから読み込み
+            // キャッシュなし or 期限切れ
+            // ステップ1: 直近データ（当年+前年）のみ高速取得 → すぐに入力可能にする
             try {
-                showMessage('Google Sheetsからデータを読み込み中...', 'success');
+                showMessage('データを読み込み中...', 'success');
                 
-                const response = await fetch(`${GAS_API_URL}?action=getData`, {
+                const response = await fetch(`${GAS_API_URL}?action=getRecentData`, {
                     method: 'GET'
                 });
                 
@@ -968,25 +969,18 @@
                 if (result.success && result.records) {
                     records = result.records;
                     
-                    // キャッシュに保存
-                    localStorage.setItem('alcohol-records-cache', JSON.stringify(records));
-                    localStorage.setItem('alcohol-records-cache-time', now.toString());
-                    
-                    // バックアップも保存
-                    localStorage.setItem('alcohol-records-backup', JSON.stringify(records));
-                    
                     updateStats();
                     updateCharts();
-                    updateLongTermStats();
+                    updateLongTermStats(); // 直近データでとりあえず表示（後で全期間に更新）
                     loadTodayData();
                     
-                    showMessage(`✅ ${result.count}件のデータを読み込みました`, 'success');
-                    console.log('Google Sheetsから読み込み完了:', records.length, '件');
+                    showMessage(`✅ 直近データを読み込みました（入力できます）`, 'success');
+                    console.log('直近データ読み込み完了:', records.length, '件');
                 } else {
                     throw new Error(result.error || '読み込みエラー');
                 }
             } catch (error) {
-                console.error('Google Sheets読み込みエラー:', error);
+                console.error('直近データ読み込みエラー:', error);
                 
                 // エラー時はキャッシュまたはバックアップから復元
                 if (cachedData) {
@@ -1012,6 +1006,38 @@
                         showMessage('⚠️ ローカルデータを使用中', 'success');
                     }
                 }
+            }
+            
+            // ステップ2: バックグラウンドで全期間データを取得（Statsタブの精度向上）
+            loadFullDataInBackground(now);
+        }
+        
+        // 全期間データをバックグラウンドで取得（Statsタブ用）
+        async function loadFullDataInBackground(cacheTime) {
+            try {
+                const response = await fetch(`${GAS_API_URL}?action=getData`, {
+                    method: 'GET'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.records) {
+                    records = result.records;
+                    
+                    // キャッシュに保存
+                    localStorage.setItem('alcohol-records-cache', JSON.stringify(records));
+                    localStorage.setItem('alcohol-records-cache-time', cacheTime.toString());
+                    localStorage.setItem('alcohol-records-backup', JSON.stringify(records));
+                    
+                    // 全期間データでStatsタブを更新（This Monthタブ等も念のため再更新）
+                    updateStats();
+                    updateCharts();
+                    updateLongTermStats();
+                    
+                    console.log('全期間データ読み込み完了（バックグラウンド）:', records.length, '件');
+                }
+            } catch (error) {
+                console.log('全期間データのバックグラウンド取得に失敗:', error);
             }
         }
         
