@@ -387,7 +387,12 @@
             gap: 6px;
             margin-bottom: 12px;
         }
-        
+
+        /* クラス2つ分の詳細度でメディアクエリの2列指定より必ず優先される */
+        .stats-grid.stats-grid-3col {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
         .stat-card {
             background: linear-gradient(135deg, var(--bg-card) 0%, #232a35 100%);
             padding: 10px 8px;
@@ -731,21 +736,17 @@
         </div>
         
         <div id="stats-tab" class="tab-content">
-            <div class="stats-grid">
+            <div class="stats-grid stats-grid-3col">
                 <div class="stat-card">
-                    <div class="stat-label">Total</div>
-                    <div class="stat-value" id="total-alcohol-stat">0<span class="stat-unit">g</span></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Avg</div>
+                    <div class="stat-label">Alcohol Avg</div>
                     <div class="stat-value" id="avg-alcohol">0<span class="stat-unit">g</span></div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Exercise</div>
-                    <div class="stat-value" id="total-workout-stat">0<span class="stat-unit">kcal</span></div>
+                    <div class="stat-label">30-Day Avg</div>
+                    <div class="stat-value" id="avg-alcohol-30d">0<span class="stat-unit">g</span></div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Avg Ex</div>
+                    <div class="stat-label">Exercise Avg</div>
                     <div class="stat-value" id="avg-workout">0<span class="stat-unit">kcal</span></div>
                 </div>
             </div>
@@ -1567,16 +1568,27 @@
             // 全日数での平均（休肝日・運動なしの日も含む）
             const totalAlcohol = thisMonthRecords.reduce((sum, r) => sum + (r.alc_g || 0), 0);
             const totalWorkout = thisMonthRecords.reduce((sum, r) => sum + (r.workout_kcal || 0), 0);
-            
+
             // 今月の1日から今日までの日数で割る
             const avgAlcohol = today > 0 ? Math.round(totalAlcohol / today * 10) / 10 : 0;
             const avgWorkout = today > 0 ? Math.round(totalWorkout / today) : 0;
-            
-            // 累計値を表示
-            document.getElementById('total-alcohol-stat').innerHTML = `${Math.round(totalAlcohol * 10) / 10}<span class="stat-unit">g</span>`;
+
             document.getElementById('avg-alcohol').innerHTML = `${avgAlcohol}<span class="stat-unit">g</span>`;
-            document.getElementById('total-workout-stat').innerHTML = `${Math.round(totalWorkout)}<span class="stat-unit">kcal</span>`;
             document.getElementById('avg-workout').innerHTML = `${avgWorkout}<span class="stat-unit">kcal</span>`;
+
+            // 直近30日の平均アルコール量（暦月をまたいでも常に直近の傾向が見えるように）
+            const thirtyDaysAgo = new Date(now);
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29); // 今日を含めて30日分
+            thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+            const last30DaysRecords = records.filter(r => {
+                const d = new Date(r.date);
+                return d >= thirtyDaysAgo && d <= now;
+            });
+            const total30DaysAlcohol = last30DaysRecords.reduce((sum, r) => sum + (r.alc_g || 0), 0);
+            const avgAlcohol30d = Math.round(total30DaysAlcohol / 30 * 10) / 10;
+
+            document.getElementById('avg-alcohol-30d').innerHTML = `${avgAlcohol30d}<span class="stat-unit">g</span>`;
         }
         
         function updateCharts() {
