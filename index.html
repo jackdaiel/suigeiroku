@@ -818,6 +818,8 @@
         const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxZW1o4HYLGClFxK_Zdym1wInWiZ1Mp8Acaj0u00THI82m5CXgYBcUMxR1CsjhPYm5MkA/exec';
         
         let records = [];
+        // ユーザーが手動で入力中かどうか（trueの間は非同期読み込みによるフィールド上書きをスキップ）
+        let formDirty = false;
         let alcoholChart = null;
         let calorieChart = null;
         let monthlyChart = null;
@@ -847,9 +849,15 @@
             // 入力フィールドのイベントリスナーを設定
             const inputs = ['beer', 'wine', 'sake', 'whisky', 'shochu', 'other', 'workout-kcal'];
             inputs.forEach(id => {
-                document.getElementById(id).addEventListener('input', updateSummary);
+                document.getElementById(id).addEventListener('input', () => {
+                    formDirty = true; // ユーザーが編集を開始したので、以後の自動読み込みでの上書きを防ぐ
+                    updateSummary();
+                });
             });
-            
+            document.getElementById('workout').addEventListener('change', () => {
+                formDirty = true;
+            });
+
             // 日付変更時のイベントリスナー
             document.getElementById('entry-date').addEventListener('change', onDateChange);
             
@@ -911,6 +919,11 @@
         
         // 今日のデータを読み込む
         function loadTodayData() {
+            if (formDirty) {
+                // ユーザーが既にフォームを編集中の場合、後追いの読み込みで上書きしない
+                console.log('フォーム編集中のため自動読み込みをスキップ');
+                return;
+            }
             const today = document.getElementById('entry-date').value;
             const existing = records.find(r => r.date === today);
             
@@ -1115,6 +1128,7 @@
         }
         
         function onDateChange() {
+            formDirty = false; // 日付を切り替えたので、その日のデータ読み込みを許可する
             const date = document.getElementById('entry-date').value;
             console.log('日付変更:', date);
             console.log('総レコード数:', records.length);
@@ -1368,11 +1382,12 @@
                     localStorage.setItem('alcohol-records-backup', JSON.stringify(records));
                     
                     // フォームはクリアしない（入力値を保持）
-                    
+                    formDirty = false; // 保存済み＝フォームの内容とSheetsが一致したのでリセット
+
                     updateStats();
                     updateCharts();
                     updateLongTermStats();
-                    
+
                     showMessage('✅ 保存完了！', 'success');
                     
                     // ボタンを再有効化
@@ -1399,6 +1414,7 @@
                 records.sort((a, b) => new Date(b.date) - new Date(a.date));
                 
                 if (saveRecords()) {
+                    formDirty = false; // ローカルには保存済み＝フォームの内容と一致したのでリセット
                     updateStats();
                     updateCharts();
                     updateLongTermStats();
